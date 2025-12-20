@@ -129,8 +129,6 @@ def run_one(dfs: Dict[str, pd.DataFrame], config: SimConfig, rng: random.Random 
 
     stage_results: list[StageResult] = []
     total_likes = 0.0
-    cumulative_goal = 0.0
-
     for stage_id in stage_order:
         stage_row = cleaned["Stages"][cleaned["Stages"]["stage_id"] == stage_id]
         if stage_row.empty:
@@ -138,7 +136,7 @@ def run_one(dfs: Dict[str, pd.DataFrame], config: SimConfig, rng: random.Random 
 
         stage_row = stage_row.iloc[0]
         time_limit = float(stage_row["time_limit_sec"])
-        cumulative_goal += float(stage_row["goal_increment_likes"])
+        required_likes = float(stage_row["goal_total_likes"])
 
         snapshot = build_stage_snapshot(stage_id, cleaned["StageSpawns"], cleaned["Pigeons"])
         dps = compute_dps(player, weapon)
@@ -161,7 +159,7 @@ def run_one(dfs: Dict[str, pd.DataFrame], config: SimConfig, rng: random.Random 
             apply_augments(weapon, aug)
 
         total_likes += likes_gained
-        passed = total_likes >= cumulative_goal and elapsed <= time_limit
+        passed = total_likes >= required_likes and elapsed <= time_limit
         evolved = False
 
         if passed and config.evolve_on_stage_clear:

@@ -18,17 +18,73 @@ import pandas as pd
 from sim import SimConfig, run_many
 
 dfs = {
-    "Characters": pd.DataFrame([{"character_id": "CHAR_001", "attack": 2.0}]),
+    "Characters": pd.DataFrame([
+        {
+            "character_id": "CHAR_001",
+            "name": "Hero",
+            "base_attack": 2.0,
+            "base_attack_speed": 1.0,
+            "base_move_speed": 1.0,
+            "base_hp": 10.0,
+            "fatigue_resist": 0.0,
+            "notes": "demo",
+        }
+    ]),
     "Pigeons": pd.DataFrame([
-        {"pigeon_id": 1, "hp": 10, "picky_rate": 0.1, "likes_reward": 1.0},
-        {"pigeon_id": 2, "hp": 20, "picky_rate": 0.2, "likes_reward": 2.0},
+        {
+            "pigeon_id": 1,
+            "name": "P1",
+            "hp": 10,
+            "move_speed": 1.0,
+            "fatigue": 0.0,
+            "fatigue_speed": 0.0,
+            "picky_rate": 0.1,
+            "good_reward": 1.0,
+            "behavior_key": "B",
+            "behavior_desc": "basic",
+            "notes": "",
+        },
+        {
+            "pigeon_id": 2,
+            "name": "P2",
+            "hp": 20,
+            "move_speed": 1.0,
+            "fatigue": 0.0,
+            "fatigue_speed": 0.0,
+            "picky_rate": 0.2,
+            "good_reward": 2.0,
+            "behavior_key": "B",
+            "behavior_desc": "basic",
+            "notes": "",
+        },
     ]),
     "Weapons": pd.DataFrame([
-        {"weapon_id": "BASIC_1", "damage": 1.0, "shots_per_sec": 2.0, "accuracy": 1.0},
-        {"weapon_id": "BASIC_EVOLVED", "damage": 2.0, "shots_per_sec": 2.0, "accuracy": 1.0},
+        {
+            "weapon_id": "BASIC_1",
+            "family": "BASIC",
+            "weapon_tier": "T1",
+            "name": "Starter",
+            "base_damage": 1.0,
+            "base_attack_speed": 2.0,
+            "notes": "",
+        },
+        {
+            "weapon_id": "BASIC_EVOLVED",
+            "family": "BASIC",
+            "weapon_tier": "T2",
+            "name": "Starter+",
+            "base_damage": 2.0,
+            "base_attack_speed": 2.0,
+            "notes": "",
+        },
     ]),
     "WeaponEvolutions": pd.DataFrame([
-        {"weapon_id": "BASIC_1", "evolves_to": "BASIC_EVOLVED", "required_upgrade_level": 2},
+        {
+            "from_weapon_id": "BASIC_1",
+            "to_weapon_id": "BASIC_EVOLVED",
+            "required_upgrade_level": 2,
+            "notes": "",
+        }
     ]),
     "Augments": pd.DataFrame([
         {
@@ -41,6 +97,7 @@ dfs = {
             "stat2": None,
             "op2": None,
             "val2": None,
+            "notes": "",
         },
         {
             "augment_id": "A2",
@@ -52,6 +109,7 @@ dfs = {
             "stat2": None,
             "op2": None,
             "val2": None,
+            "notes": "",
         },
     ]),
     "LevelCurve": pd.DataFrame([
@@ -59,13 +117,27 @@ dfs = {
         {"level": 2, "xp_to_next": 2},
     ]),
     "Stages": pd.DataFrame([
-        {"stage_id": "CH1_S1", "chapter_id": "CH1", "time_limit_sec": 30, "goal_increment_likes": 5},
-        {"stage_id": "CH1_S2", "chapter_id": "CH1", "time_limit_sec": 30, "goal_increment_likes": 8},
+        {
+            "stage_id": "CH1_S1",
+            "chapter_id": "CH1",
+            "time_limit_sec": 30,
+            "goal_increment_likes": 5,
+            "goal_total_likes": None,
+            "notes": "",
+        },
+        {
+            "stage_id": "CH1_S2",
+            "chapter_id": "CH1",
+            "time_limit_sec": 30,
+            "goal_increment_likes": 8,
+            "goal_total_likes": None,
+            "notes": "",
+        },
     ]),
     "StageSpawns": pd.DataFrame([
-        {"stage_id": "CH1_S1", "pigeon_id": 1, "count": 3},
-        {"stage_id": "CH1_S1", "pigeon_id": 2, "count": 1},
-        {"stage_id": "CH1_S2", "pigeon_id": 1, "count": 4},
+        {"stage_id": "CH1_S1", "pigeon_id": 1, "count": 3, "notes": ""},
+        {"stage_id": "CH1_S1", "pigeon_id": 2, "count": 1, "notes": ""},
+        {"stage_id": "CH1_S2", "pigeon_id": 1, "count": 4, "notes": ""},
     ]),
 }
 

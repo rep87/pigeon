@@ -34,7 +34,7 @@ def build_stage_snapshot(stage_id: str, spawns_df: pd.DataFrame, pigeons_df: pd.
     Args:
         stage_id: Stage identifier to filter spawns.
         spawns_df: DataFrame with columns [stage_id, pigeon_id, count].
-        pigeons_df: DataFrame with columns [pigeon_id, hp, picky_rate, likes_reward].
+        pigeons_df: DataFrame with columns [pigeon_id, hp, picky_rate, good_reward].
 
     Returns:
         StageSnapshot with averaged effective hp and reward values.
@@ -48,7 +48,7 @@ def build_stage_snapshot(stage_id: str, spawns_df: pd.DataFrame, pigeons_df: pd.
     denom = (1 - merged["picky_rate"]).clip(lower=1e-6)
     merged["effective_hp"] = merged["hp"] / denom
     merged["weighted_hp"] = merged["effective_hp"] * merged["count"]
-    merged["weighted_reward"] = merged["likes_reward"] * merged["count"]
+    merged["weighted_reward"] = merged["good_reward"] * merged["count"]
 
     total_count = merged["count"].sum()
     avg_effective_hp = merged["weighted_hp"].sum() / max(total_count, 1e-6)
@@ -101,7 +101,7 @@ def maybe_evolve_weapon(
     Returns True if an evolution occurred.
     """
 
-    candidates = evolutions[evolutions["weapon_id"] == weapon.weapon_id]
+    candidates = evolutions[evolutions["from_weapon_id"] == weapon.weapon_id]
     eligible_rows = [
         row
         for _, row in candidates.iterrows()
@@ -118,16 +118,17 @@ def maybe_evolve_weapon(
     else:
         chosen = rng.choice(eligible_rows) if len(eligible_rows) > 1 else eligible_rows[0]
 
-    target_id = chosen["evolves_to"]
+    target_id = chosen["to_weapon_id"]
     if target_id not in weapons_lookup:
         return False
 
     evolved = weapons_lookup[target_id].copy()
+    preserved_upgrades = weapon.upgrade_count
     weapon.weapon_id = evolved.weapon_id
     weapon.damage = evolved.damage
     weapon.shots_per_sec = evolved.shots_per_sec
     weapon.accuracy = evolved.accuracy
-    # retain upgrade count per requirement
+    weapon.upgrade_count = preserved_upgrades
     return True
 
 
@@ -173,8 +174,8 @@ def build_weapon_lookup(weapons_df: pd.DataFrame) -> Dict[str, WeaponState]:
     for _, row in weapons_df.iterrows():
         lookup[str(row["weapon_id"])] = WeaponState(
             weapon_id=str(row["weapon_id"]),
-            damage=float(row.get("damage", row.get("base_damage", 0))),
-            shots_per_sec=float(row.get("shots_per_sec", row.get("fire_rate", 0))),
+            damage=float(row.get("base_damage", 0)),
+            shots_per_sec=float(row.get("base_attack_speed", 0)),
             accuracy=float(row.get("accuracy", 1.0)),
             upgrade_count=0,
         )
@@ -188,7 +189,7 @@ def build_character_lookup(characters_df: pd.DataFrame) -> Dict[str, PlayerState
     for _, row in characters_df.iterrows():
         lookup[str(row["character_id"])] = PlayerState(
             character_id=str(row["character_id"]),
-            attack=float(row.get("attack", row.get("base_attack", 1.0))),
+            attack=float(row.get("base_attack", 1.0)),
             level=1,
             xp=0.0,
         )
