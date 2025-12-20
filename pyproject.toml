@@ -6,6 +6,7 @@ authors = [{name = ""}]
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
+dependencies = ["pandas>=1.5"]
 
 [build-system]
 requires = ["setuptools>=61.0"]
