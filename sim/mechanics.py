@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Iterable
+from typing import Dict, Iterable, List, Sequence
 
 import pandas as pd
 
@@ -23,27 +23,24 @@ class Augment:
     """Normalized augment row."""
 
     augment_id: str
-    rarity: str
+    tier: str
     target: str
-    stat: str
-    op: str
-    val: float
-    applies_to_weapon_id: str | None = None
+    effects: Sequence[tuple[str, str, float]]
 
 
-def build_stage_snapshot(stage_name: str, spawns_df: pd.DataFrame, pigeons_df: pd.DataFrame) -> StageSnapshot:
+def build_stage_snapshot(stage_id: str, spawns_df: pd.DataFrame, pigeons_df: pd.DataFrame) -> StageSnapshot:
     """Calculate aggregated effective HP and reward for a stage.
 
     Args:
-        stage_name: Stage identifier to filter spawns.
-        spawns_df: DataFrame with columns [stage_name, pigeon_id, count].
+        stage_id: Stage identifier to filter spawns.
+        spawns_df: DataFrame with columns [stage_id, pigeon_id, count].
         pigeons_df: DataFrame with columns [pigeon_id, hp, picky_rate, likes_reward].
 
     Returns:
         StageSnapshot with averaged effective hp and reward values.
     """
 
-    stage_spawns = spawns_df[spawns_df["stage_name"] == stage_name]
+    stage_spawns = spawns_df[spawns_df["stage_id"] == stage_id]
     if stage_spawns.empty:
         return StageSnapshot(avg_effective_hp=1.0, avg_reward=0.0)
 
@@ -74,23 +71,21 @@ def apply_augments(target: PlayerState | WeaponState, augment: Augment) -> None:
         augment: The augment definition to apply.
     """
 
-    op = augment.op.upper()
-    stat = augment.stat
+    for stat, op, val in augment.effects:
+        if not hasattr(target, stat):
+            continue
 
-    if not hasattr(target, stat):
-        return
+        current = getattr(target, stat)
+        if op == "ADD":
+            updated = current + val
+        elif op == "MUL":
+            updated = current * val
+        else:
+            raise ValueError(f"Unsupported augment op: {op}")
 
-    current = getattr(target, stat)
-    if op == "ADD":
-        updated = current + augment.val
-    elif op == "MUL":
-        updated = current * augment.val
-    else:
-        raise ValueError(f"Unsupported augment op: {augment.op}")
+        setattr(target, stat, updated)
 
-    setattr(target, stat, updated)
-
-    if isinstance(target, WeaponState):
+    if isinstance(target, WeaponState) and augment.target == "WEAPON":
         target.upgrade_count += 1
 
 
@@ -98,6 +93,8 @@ def maybe_evolve_weapon(
     weapon: WeaponState,
     evolutions: pd.DataFrame,
     weapons_lookup: Dict[str, WeaponState],
+    rng,
+    policy: str = "RANDOM",
 ) -> bool:
     """Attempt to evolve the weapon based on upgrade count.
 
@@ -105,15 +102,23 @@ def maybe_evolve_weapon(
     """
 
     candidates = evolutions[evolutions["weapon_id"] == weapon.weapon_id]
-    if candidates.empty:
+    eligible_rows = [
+        row
+        for _, row in candidates.iterrows()
+        if float(row.get("required_upgrade_level", 0)) <= weapon.upgrade_count
+    ]
+    if not eligible_rows:
         return False
 
-    row = candidates.iloc[0]
-    required = float(row.get("required_upgrade_level", 0))
-    if weapon.upgrade_count < required:
-        return False
+    if policy.upper() == "FIRST":
+        if eligible_rows and hasattr(candidates, "sort_values") and "order" in candidates.columns:
+            chosen = candidates.sort_values("order").iloc[0]
+        else:
+            chosen = eligible_rows[0]
+    else:
+        chosen = rng.choice(eligible_rows) if len(eligible_rows) > 1 else eligible_rows[0]
 
-    target_id = row["evolves_to"]
+    target_id = chosen["evolves_to"]
     if target_id not in weapons_lookup:
         return False
 
@@ -122,8 +127,31 @@ def maybe_evolve_weapon(
     weapon.damage = evolved.damage
     weapon.shots_per_sec = evolved.shots_per_sec
     weapon.accuracy = evolved.accuracy
-    weapon.upgrade_count = 0
+    # retain upgrade count per requirement
     return True
+
+
+def _collect_effects(row: pd.Series) -> List[tuple[str, str, float]]:
+    effects: List[tuple[str, str, float]] = []
+    try:
+        is_missing = pd.isna  # type: ignore[attr-defined]
+    except AttributeError:  # pragma: no cover - fallback for stubby pandas
+        def is_missing(value: object) -> bool:
+            try:
+                return value is None or value != value
+            except Exception:
+                return True
+
+    for idx in (1, 2):
+        stat_key = f"stat{idx}"
+        op_key = f"op{idx}"
+        val_key = f"val{idx}"
+        if stat_key not in row or is_missing(row[stat_key]):
+            continue
+        raw_val = row.get(val_key, 0)
+        val = 0.0 if is_missing(raw_val) else float(raw_val)
+        effects.append((str(row[stat_key]), str(row.get(op_key, "ADD")).upper(), val))
+    return effects
 
 
 def normalize_augments(df: pd.DataFrame) -> Iterable[Augment]:
@@ -132,14 +160,9 @@ def normalize_augments(df: pd.DataFrame) -> Iterable[Augment]:
     for _, row in df.iterrows():
         yield Augment(
             augment_id=str(row["augment_id"]),
-            rarity=str(row.get("rarity", "SILVER")),
+            tier=str(row.get("tier", "SILVER")),
             target=str(row["target"]).upper(),
-            stat=str(row["stat"]),
-            op=str(row["op"]).upper(),
-            val=float(row["val"]),
-            applies_to_weapon_id=str(row["applies_to_weapon_id"])
-            if "applies_to_weapon_id" in row and pd.notna(row["applies_to_weapon_id"])
-            else None,
+            effects=_collect_effects(row),
         )
 
 
@@ -150,8 +173,8 @@ def build_weapon_lookup(weapons_df: pd.DataFrame) -> Dict[str, WeaponState]:
     for _, row in weapons_df.iterrows():
         lookup[str(row["weapon_id"])] = WeaponState(
             weapon_id=str(row["weapon_id"]),
-            damage=float(row["damage"]),
-            shots_per_sec=float(row["shots_per_sec"]),
+            damage=float(row.get("damage", row.get("base_damage", 0))),
+            shots_per_sec=float(row.get("shots_per_sec", row.get("fire_rate", 0))),
             accuracy=float(row.get("accuracy", 1.0)),
             upgrade_count=0,
         )
@@ -159,12 +182,12 @@ def build_weapon_lookup(weapons_df: pd.DataFrame) -> Dict[str, WeaponState]:
 
 
 def build_character_lookup(characters_df: pd.DataFrame) -> Dict[str, PlayerState]:
-    """Create PlayerState templates keyed by character name."""
+    """Create PlayerState templates keyed by character_id."""
 
     lookup: Dict[str, PlayerState] = {}
     for _, row in characters_df.iterrows():
-        lookup[str(row["name"])] = PlayerState(
-            name=str(row["name"]),
+        lookup[str(row["character_id"])] = PlayerState(
+            character_id=str(row["character_id"]),
             attack=float(row.get("attack", row.get("base_attack", 1.0))),
             level=1,
             xp=0.0,

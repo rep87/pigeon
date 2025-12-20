@@ -9,7 +9,7 @@ from dataclasses import dataclass
 class PlayerState:
     """Mutable player state during a run."""
 
-    name: str
+    character_id: str
     attack: float
     level: int = 1
     xp: float = 0.0
@@ -17,7 +17,12 @@ class PlayerState:
     def copy(self) -> "PlayerState":
         """Return a shallow copy for branching simulations."""
 
-        return PlayerState(name=self.name, attack=self.attack, level=self.level, xp=self.xp)
+        return PlayerState(
+            character_id=self.character_id,
+            attack=self.attack,
+            level=self.level,
+            xp=self.xp,
+        )
 
 
 @dataclass

@@ -3,27 +3,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict
 
 
 @dataclass
 class SimConfig:
-    """Top-level simulation configuration.
+    """Top-level simulation configuration."""
 
-    Attributes:
-        character_name: Name of the character to simulate. Must exist in the
-            Characters sheet.
-        starting_weapon_id: Identifier of the starting weapon.
-        stage_order: Ordered list of stage names to simulate.
-        rng_seed: Optional seed for deterministic sampling.
-        offers_per_level: Number of augment offers presented at each level-up.
-        offer_rarity: Which rarity tier to pull level-up augments from. Defaults
-            to "SILVER" as a simple MVP assumption.
-    """
-
-    character_name: str
-    starting_weapon_id: str
-    stage_order: List[str] = field(default_factory=list)
-    rng_seed: Optional[int] = None
-    offers_per_level: int = 3
-    offer_rarity: str = "SILVER"
+    spreadsheet_id: str | None = None
+    chapter_id: str = "CH1"
+    character_id: str = ""
+    starting_weapon_id: str = "BASIC_1"
+    offers_per_levelup: int = 3
+    offer_tier: str = "SILVER"
+    num_runs: int = 200
+    seed: int = 42
+    evolve_on_stage_clear: bool = True
+    evolve_policy: str = "RANDOM"
+    weapon_slots_by_chapter: Dict[str, int] = field(default_factory=lambda: {"CH1": 1})
