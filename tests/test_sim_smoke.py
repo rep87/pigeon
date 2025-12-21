@@ -164,6 +164,18 @@ class SimSmokeTest(unittest.TestCase):
         evolved_runs = [stage.evolved for run in report.runs for stage in run.stages]
         self.assertTrue(any(evolved_runs))
 
+        dfs_out = report.to_dfs()
+        self.assertIn("runs", dfs_out)
+        self.assertIn("stages", dfs_out)
+        self.assertIn("choices", dfs_out)
+        # DataFrames should have expected columns
+        self.assertIn("picked_augment_id", dfs_out["choices"].columns)
+        self.assertIn("stage_weapon_damage", dfs_out["stages"].columns)
+        self.assertIn("chosen_augments_count", dfs_out["runs"].columns)
+        # summary should render without error
+        summary = report.summary_text()
+        self.assertIsInstance(summary, str)
+
 
 if __name__ == "__main__":
     unittest.main()

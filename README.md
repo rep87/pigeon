@@ -144,6 +144,12 @@ dfs = {
 config = SimConfig(chapter_id="CH1", character_id="CHAR_001", starting_weapon_id="BASIC_1")
 report = run_many(dfs, config)
 print("Success rate:", report.success_rate)
+
+# Export DataFrames for plotting/analysis
+dfs_out = report.to_dfs()
+print(report.summary_text())
+print(dfs_out["runs"].head())
+print(dfs_out["choices"].head())
 ```
 
 ## Development

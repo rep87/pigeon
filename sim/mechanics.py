@@ -190,6 +190,9 @@ def build_character_lookup(characters_df: pd.DataFrame) -> Dict[str, PlayerState
         lookup[str(row["character_id"])] = PlayerState(
             character_id=str(row["character_id"]),
             attack=float(row.get("base_attack", 1.0)),
+            attack_speed=float(row.get("base_attack_speed", 1.0)),
+            move_speed=float(row.get("base_move_speed", 0.0)),
+            hp=float(row.get("base_hp", 0.0)),
             level=1,
             xp=0.0,
         )
