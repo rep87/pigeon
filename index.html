@@ -1,0 +1,541 @@
+﻿<!doctype html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
+    <title>오늘도 모이 난사 중</title>
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            font-family: "Segoe UI", "Noto Sans KR", sans-serif;
+            background: radial-gradient(circle at 20% 10%, #fff, #c8ebff 38%, #f4fbff 82%)
+        }
+
+        .wrap {
+            width: min(440px, 100vw);
+            padding: 10px;
+            position: relative
+        }
+
+        .hud {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: start;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, .82);
+            font-size: 12px
+        }
+
+        #hudLevel {
+            font-weight: 800
+        }
+
+        #hudRight {
+            text-align: right;
+            font-weight: 900;
+            font-size: 24px;
+            line-height: 1
+        }
+        #hudRight .lb{display:block;font-size:10px;font-weight:700;color:#64748b;letter-spacing:.8px}
+
+        #xpText {
+            font-size: 10px;
+            font-weight: 700;
+            color: #334155;
+            margin-top: 2px
+        }
+
+        #xpBar {
+            height: 6px;
+            background: #cbd5e1;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 2px
+        }
+
+        #xpFill {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #2563eb, #22c55e)
+        }
+
+        .bar {
+            height: 10px;
+            background: #d1d5db;
+            border-radius: 999px;
+            overflow: hidden
+        }
+
+        .fill {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #22c55e, #f59e0b, #ef4444)
+        }
+
+        #bossHud {
+            display: none;
+            margin-bottom: 8px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(10, 20, 35, .88);
+            color: #f8fafc
+        }
+
+        #bossHud .r {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        #bossDir {
+            font-size: 24px;
+            font-weight: 800;
+            width: 32px;
+            text-align: center
+        }
+
+        #bossBar {
+            height: 14px;
+            border-radius: 999px;
+            background: #334155;
+            overflow: hidden;
+            flex: 1
+        }
+
+        #bossFill {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #f59e0b, #facc15, #fde047)
+        }
+
+        #bossTime {
+            font-weight: 700;
+            font-size: 12px
+        }
+
+        #bossHpTxt {
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 68px;
+            text-align: right
+        }
+
+        canvas {
+            width: min(96vw, 420px);
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            border-radius: 12px;
+            border: 2px solid #b9d8ef;
+            background: linear-gradient(180deg, #ebf8ff 0%, #eaf8ea 60%, #daf4d8 100%);
+            aspect-ratio: 9/16
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 84px 10px 10px;
+            border-radius: 12px;
+            background: rgba(11, 18, 32, .64);
+            display: grid;
+            place-items: center;
+            z-index: 6;
+            padding: 16px
+        }
+
+        .overlay[hidden] {
+            display: none
+        }
+
+        .panel {
+            width: min(350px, 100%);
+            padding: 18px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .97);
+            text-align: center
+        }
+
+        h1 {
+            margin: 0 0 16px;
+            font-size: 28px
+        }
+
+        .btns {
+            display: grid;
+            gap: 10px
+        }
+
+        button {
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 12px;
+            font-size: 15px;
+            font-weight: 700;
+            background: #2563eb;
+            color: #eff6ff;
+            cursor: pointer
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px
+        }
+
+        .card {
+            width: 100%;
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            text-align: left
+        }
+
+        .msg {
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 3px 8px rgba(0, 0, 0, .45);
+            text-align: center;
+            white-space: pre-line
+        }
+
+        .item {
+            position: absolute;
+            right: 16px;
+            bottom: 16px;
+            z-index: 5;
+            display: grid;
+            gap: 8px
+        }
+
+        .slot {
+            position: relative;
+            width: 64px;
+            height: 64px
+        }
+
+        .slot .t {
+            position: absolute;
+            top: -16px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            text-shadow: 0 1px 2px #000
+        }
+
+        .slot button {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            font-size: 28px;
+            border: 2px solid #64748b;
+            background: rgba(15, 23, 42, .72)
+        }
+
+        .slot button.empty {
+            font-size: 18px;
+            color: #64748b
+        }
+
+        #buffUi {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 92px;
+            z-index: 5;
+            display: flex;
+            gap: 8px
+        }
+
+        .buff {
+            min-width: 54px;
+            padding: 5px 8px;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, .72);
+            color: #e2e8f0;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            border: 1px solid #64748b
+        }
+
+        #devPanel {
+            position: absolute;
+            left: calc(100% + 10px);
+            top: 86px;
+            width: 150px;
+            padding: 8px;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, .9);
+            color: #e2e8f0;
+            z-index: 7
+        }
+
+        #devPanel button {
+            width: 100%;
+            margin-bottom: 6px;
+            padding: 6px 8px;
+            font-size: 12px
+        }
+
+        #statsBody {
+            margin: 10px 0 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #0f172a;
+            white-space: pre-line;
+            text-align: left
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="hud">
+            <div>
+                <div id="hudLevel">LV 1</div>
+                <div id="xpText">XP 0 / 10</div>
+                <div id="xpBar">
+                    <div id="xpFill"></div>
+                </div>
+            </div>
+            <div id="hudRight"><span class="lb">TIME</span><span id="hudTimer">60.0s</span></div>
+        </div>
+        <div style="text-align:center;font-weight:800;color:#0f172a;margin:-2px 0 8px" id="hudCenter">S1 | 목표 👍 180</div>
+        <div id="bossHud">
+            <div class="r">
+                <div id="bossDir">↑</div>
+                <div id="bossBar">
+                    <div id="bossFill"></div>
+                </div>
+                <div id="bossHpTxt">0%</div>
+                <div id="bossTime">120.0s</div>
+            </div>
+        </div>
+        <canvas id="game" width="540" height="960"></canvas>
+        <div class="item">
+            <div class="slot">
+                <div class="t" id="st0"></div><button id="s0" class="empty">+</button>
+            </div>
+            <div class="slot">
+                <div class="t" id="st1"></div><button id="s1" class="empty">+</button>
+            </div>
+        </div>
+        <div id="buffUi"></div>
+        <div class="overlay" id="titleOv">
+            <div class="panel">
+                <h1>오늘도 모이 난사 중</h1>
+                <div class="btns"><button id="startBtn">시작</button><button disabled>상점 (준비 중)</button><button
+                        id="exitBtn">종료</button></div>
+                <div id="titleResult" style="margin-top:10px;font-weight:700"></div>
+            </div>
+        </div>
+        <div class="overlay" id="levelOv" hidden>
+            <div class="panel">
+                <h2 id="lvTitle" style="margin:0 0 8px">레벨 업!</h2>
+                <p id="lvSub" style="margin:0 0 10px">카드 하나 선택</p>
+                <div class="cards" id="lvCards"></div>
+            </div>
+        </div>
+        <div class="overlay" id="evoOv" hidden>
+            <div class="panel">
+                <div id="evoMsg" style="font-size:28px;font-weight:800;color:#fde68a">무기 진화!</div>
+            </div>
+        </div>
+        <div class="overlay" id="msgOv" hidden>
+            <div class="msg" id="msgText"></div>
+        </div>
+        <div class="overlay" id="statsOv" hidden>
+            <div class="panel">
+                <h2 style="margin:0 0 8px">현재 스탯</h2>
+                <div id="statsBody"></div><button id="statsCloseBtn">닫기 (C)</button>
+            </div>
+        </div>
+        <div id="devPanel"><button data-stage="1">S1</button><button data-stage="2">S2</button><button
+                data-stage="3">S3</button><button data-stage="4">S4</button><button data-stage="5">S5</button><button
+                id="devBossBtn">보스전</button><button id="devMaxBtn">만렙(20)+카드</button></div>
+    </div>
+    <script>
+        "use strict";
+        const $ = id => document.getElementById(id), c = $("game"), x = c.getContext("2d");
+        const hudLevel = $("hudLevel"), hudCenter = $("hudCenter"), hudTimer = $("hudTimer"), xpText = $("xpText"), xpFill = $("xpFill");
+        const bossHud = $("bossHud"), bossDirEl = $("bossDir"), bossFill = $("bossFill"), bossHpTxt = $("bossHpTxt"), bossTime = $("bossTime");
+        const titleOv = $("titleOv"), levelOv = $("levelOv"), evoOv = $("evoOv"), msgOv = $("msgOv"), msgText = $("msgText"), statsOv = $("statsOv"), statsBody = $("statsBody"), statsCloseBtn = $("statsCloseBtn");
+        const titleResult = $("titleResult"), lvTitle = $("lvTitle"), lvSub = $("lvSub"), lvCards = $("lvCards"), evoMsg = $("evoMsg"), buffUi = $("buffUi"), devPanel = $("devPanel"), devBossBtn = $("devBossBtn"), devMaxBtn = $("devMaxBtn");
+        const sBtns = [$("s0"), $("s1")], sTimers = [$("st0"), $("st1")];
+        const PLAYER_SPRITE_PATH = "player_sprite.png";
+        const BOOM_IMAGE_PATH = "boom.webp";
+        const BACKGROUND_IMAGE_PATH = "background.png";
+        const BG_TILE_SCALE = .28;
+        const PIGEON_SPRITE_BASE_PATH = "";
+        const SPRITE_PATH_CANDIDATES = ["", "./", "sprites/", "assets/", "img/", "images/"];
+        const VIEW_ZOOM = 1.6;
+        const PIGEON_SPRITES = { dull: "pigeon_1001.png", adhd: "pigeon_1002.png", picky: "pigeon_1003.png", rude: "pigeon_1004.png", shy: "pigeon_1005.png", mom: "pigeon_1006.png", boss: "pigeon_1101.png" };
+        const W = c.width, H = c.height, MW = W * 3, MH = H * 2;
+        const LEVELS = (() => { const a = [10, 30, 60, 100, 150, 210, 280, 360, 450, 550]; while (a.length < 19) a.push(Math.round(a[a.length - 1] * 1.1)); return a; })(), AUTO_RANGE = 2, BASE_FIRE = .16, BASE_MS = 220;
+        const ITEM_DROP = .15, ATOM_DROP = .05, ITEM_DUR = 5, FAT_ZONE = 1.5, FAT_MIN = 3, FAT_INC = 22, FAT_DEC = 18, BOSS_TIME = 90, BOSS_REDUCE = .5, BOSS_BASE_DMG = 60;
+        const DIRS = [{ v: { x: 0, y: -1 }, a: "↑" }, { v: { x: 0, y: 1 }, a: "↓" }, { v: { x: -1, y: 0 }, a: "←" }, { v: { x: 1, y: 0 }, a: "→" }], DIR_DOT_REQ = .92;
+        const STAGES = [{ id: "S1", t: 60, target: 180, drop: 1, sp: { dull: 200, adhd: 20 } }, { id: "S2", t: 60, target: 350, drop: 1, sp: { dull: 50, adhd: 150, picky: 50 } }, { id: "S3", t: 60, target: 560, drop: 1, sp: { dull: 50, adhd: 60, rude: 200 } }, { id: "S4 보너스", t: 30, target: 840, drop: 2, sp: { mom: 150 } }, { id: "S5", t: 90, target: 1300, drop: 1, sp: { dull: 60, picky: 60, shy: 200 } }];
+        const game = { mode: "title", si: 0, se: 0, thumb: 0, lv: 1, fat: 0, fireCd: 0, spawn: {}, msgAt: 0, msgCb: null, evoAt: 0, atomic: 0, boomT: 0, boss: null, shake: 0, debugPickLeft: 0 };
+        const cam = { x: 0, y: 0 }, p = { x: MW / 2, y: MH / 2, r: 14, fx: 1, fy: 0, stun: 0 }, b = { w: null, fr: 1, dm: 1, sm: 1, ag: 1, mv: 1, fm: 1, hr: 1, evo: false };
+        const SPR_W = 16, SPR_H = 16, SPR_COLS = 4, SPR_FRAME_SEC = .15, SPR_ROWS = { down: 0, up: 1, right: 2, left: 3, atk: 4, hit: 5, idle: 6 };
+        const ps = { img: new Image(), ready: false, fail: false, frame: 0, t: 0, face: "down", state: "idle", lock: 0, row: SPR_ROWS.idle, flip: false };
+        const boomImg = { img: new Image(), ready: false };
+        const bgImg = { img: new Image(), ready: false };
+        const BIRD_SPR_W = 16, BIRD_SPR_H = 16, BIRD_SPR_COLS = 4, BIRD_SPR_FRAME_SEC = .18, BIRD_SPR_ROWS = { move: 0, special: 1, sat: 2 };
+        const BIRD_SPR_META = {
+            dull: { fw: 256, fh: 341, cols: 6, rows: 3, sec: .18, sw: 1.2, sh: 1.44, bottom: true },
+            adhd: { fw: 256, fh: 341, cols: 6, rows: 3, sec: .18, sw: 1, sh: 1, bottom: true },
+            picky: { fw: 256, fh: 341, cols: 6, rows: 3, sec: .18, sw: 1, sh: 1, bottom: true },
+            rude: { fw: 256, fh: 341, cols: 6, rows: 3, sec: .18, sw: 1, sh: 1, bottom: true },
+            shy: { fw: 256, fh: 341, cols: 5, rows: 3, sec: .18, sw: 1, sh: 1, bottom: true },
+            mom: { fw: 256, fh: 341, cols: 5, rows: 3, sec: .18, sw: 1, sh: 1, bottom: true },
+            boss: { fw: 256, fh: 341, cols: 5, rows: 3, sec: .18, sw: 1, sh: 1, bottom: true }
+        };
+        const it = { slots: [null, null], active: { bac: 0, cof: 0, eng: 0 }, slotT: [null, null] };
+        const keys = new Set(), foods = [], birds = [], fx = [], pickedCards = []; let last = 0;
+        ps.img.src = PLAYER_SPRITE_PATH; ps.img.onload = () => ps.ready = true; ps.img.onerror = () => { ps.ready = false; ps.fail = true; };
+        boomImg.img.src = BOOM_IMAGE_PATH; boomImg.img.onload = () => boomImg.ready = true;
+        bgImg.img.src = BACKGROUND_IMAGE_PATH; bgImg.img.onload = () => bgImg.ready = true;
+        const pigeonImgs = {};
+        function loadSpriteWithCandidates(rec, file) { const cand = [`${PIGEON_SPRITE_BASE_PATH}${file}`, ...SPRITE_PATH_CANDIDATES.map(p => `${p}${file}`)], uniq = []; for (const s of cand) if (s && !uniq.includes(s)) uniq.push(s); rec.try = 0; rec.src = uniq[0] || file; rec.img.onload = () => { rec.ready = true; rec.fail = false; }; rec.img.onerror = () => { rec.try++; if (rec.try < uniq.length) { rec.img.src = uniq[rec.try] } else { rec.ready = false; rec.fail = true; } }; rec.img.src = rec.src; }
+        Object.entries(PIGEON_SPRITES).forEach(([k, f]) => { const img = new Image(); pigeonImgs[k] = { img, ready: false, fail: false, try: 0, src: "" }; loadSpriteWithCandidates(pigeonImgs[k], f); });
+        x.imageSmoothingEnabled = false;
+        const R = (a, b) => Math.random() * (b - a) + a, cl = (v, a, b) => Math.max(a, Math.min(b, v));
+        const mapW = () => game.mode === "boss" ? W : MW, mapH = () => game.mode === "boss" ? H : MH;
+        const viewW = () => W / VIEW_ZOOM, viewH = () => H / VIEW_ZOOM;
+        const birdMeta = k => BIRD_SPR_META[k] || { fw: BIRD_SPR_W, fh: BIRD_SPR_H, cols: BIRD_SPR_COLS, rows: 3, sec: BIRD_SPR_FRAME_SEC, sw: 1, sh: 1, bottom: false };
+        const thumbGain = (base) => { const r = Math.random(); if (r < 0.05) return base * 3; if (r < 0.25) return base * 2; return base; };
+        const stage = () => STAGES[game.si], maxFat = () => 100 * b.fm;
+        const fireInt = () => BASE_FIRE / (b.fr * (it.active.bac > 0 ? 1.3 : 1) * Math.max(1 - game.fat / maxFat(), 0.02));
+        const moveSp = () => BASE_MS * b.mv * (it.active.cof > 0 ? 1.3 : 1), hitR = () => 5 * b.hr * (it.active.eng > 0 ? 1.5 : 1), aggroR = () => p.r * 2 * AUTO_RANGE * b.ag;
+        function setupStage(i) { game.si = i; game.se = 0; game.spawn = {}; foods.length = 0; birds.length = 0; fx.length = 0; game.boss = null; Object.entries(stage().sp).forEach(([k, n]) => game.spawn[k] = { n, s: 0, next: 0, intv: stage().t / n }) }
+        function resetRun() { game.mode = "playing"; game.thumb = 0; game.lv = 1; game.fat = 0; game.fireCd = 0; game.atomic = 0; game.boomT = 0; game.msgCb = null; game.msgAt = 0; game.evoAt = 0; game.boss = null; game.shake = 0; pickedCards.length = 0; b.w = null; b.fr = b.dm = b.sm = b.ag = b.mv = b.fm = b.hr = 1; b.evo = false; it.slots = [null, null]; it.active = { bac: 0, cof: 0, eng: 0 }; it.slotT = [null, null]; p.x = MW / 2; p.y = MH / 2; p.fx = 1; p.fy = 0; p.stun = 0; ps.frame = 0; ps.t = 0; ps.face = "down"; ps.state = "idle"; ps.lock = 0; ps.row = SPR_ROWS.idle; ps.flip = false; setupStage(0); titleOv.hidden = true; levelOv.hidden = true; evoOv.hidden = true; msgOv.hidden = true; statsOv.hidden = true; titleResult.textContent = "" }
+        function edgePos() { const pad = 18, s = Math.floor(R(0, 8)); if (s === 0) return { x: R(pad, MW - pad), y: pad }; if (s === 1) return { x: MW - pad, y: pad }; if (s === 2) return { x: MW - pad, y: R(pad, MH - pad) }; if (s === 3) return { x: MW - pad, y: MH - pad }; if (s === 4) return { x: R(pad, MW - pad), y: MH - pad }; if (s === 5) return { x: pad, y: MH - pad }; if (s === 6) return { x: pad, y: R(pad, MH - pad) }; return { x: pad, y: pad } }
+        function nearPos() { const a = R(0, Math.PI * 2), d = R(220, 380); return { x: cl(p.x + Math.cos(a) * d, 24, MW - 24), y: cl(p.y + Math.sin(a) * d, 24, MH - 24) } }
+        function adhdTurn(b0) {
+            // Force a big angle change so the ADHD pigeon snaps direction hard.
+            const prev = Math.atan2(b0.dy || 0, b0.dx || 1);
+            let a = prev, tries = 0;
+            while (tries < 8) {
+                a = R(0, Math.PI * 2);
+                let diff = Math.abs(a - prev);
+                if (diff > Math.PI) diff = Math.PI * 2 - diff;
+                if (diff >= Math.PI * .6) break;
+                tries++;
+            }
+            b0.dx = Math.cos(a);
+            b0.dy = Math.sin(a);
+            b0.turn = R(.28, .65);
+        }
+        function mkBird(k) { const m = birdMeta(k), nearChance = (game.si === 0 && game.se < 10) ? 1 : (birds.length < 25 ? .75 : .45), q = Math.random() < nearChance ? nearPos() : edgePos(), a = R(0, Math.PI * 2), o = { k, x: q.x, y: q.y, sat: 0, max: 100, reward: 1, born: game.se, r: 12, sp: 2.5 * 35, hp: 20, dx: Math.cos(a), dy: Math.sin(a), turn: R(1, 2), ds: "idle", dt: R(1, 2), escape: false, limit: 8, hitCd: 0, avx: 0, flip: false, af: 0, at: 0, hitFor: 0, satFor: 0, satDone: false, acols: m.cols, asec: m.sec }; if (k === "dull") { o.hp = 20; o.sp = 2 * 35; o.r = 12; o.reward = 1 } if (k === "adhd") { o.hp = 45; o.sp = 5.4 * 35; o.r = 13; o.reward = 1; o.turn = R(.28, .65); } if (k === "picky") { o.hp = 80; o.sp = 3.6 * 35; o.r = 13; o.reward = 1 } if (k === "rude") { o.hp = 90; o.sp = 5 * 35; o.r = 13; o.reward = 1; o.dt = R(1, 2) } if (k === "shy") { o.hp = 120; o.sp = 3 * 35; o.r = 13; o.reward = 2; o.limit = 8 } if (k === "mom") { o.hp = 220; o.sp = 2 * 35; o.r = 15; o.reward = 3 } birds.push(o) }
+        function updateSpawn() { Object.entries(game.spawn).forEach(([k, s]) => { while (s.s < s.n && game.se >= s.next) { mkBird(k); s.s++; s.next += s.intv } }) }
+        function triggerHitAnim() { ps.state = "hit"; ps.lock = .35 }
+        function triggerAttackAnim() { if (ps.state !== "hit") { ps.state = "atk"; ps.lock = .2 } }
+        function faceFromVec(vx, vy) { if (Math.abs(vx) >= Math.abs(vy)) return vx < 0 ? "left" : "right"; return vy < 0 ? "up" : "down" }
+        function updatePlayerAnim(dt, mx, my) { if (mx || my) ps.face = faceFromVec(mx, my); else ps.face = faceFromVec(p.fx, p.fy); if (ps.lock > 0) { ps.lock = Math.max(0, ps.lock - dt); if (ps.lock <= 0) ps.state = "idle" } if (ps.state === "hit") { ps.row = SPR_ROWS.hit; ps.flip = false } else if (ps.state === "atk") { ps.row = SPR_ROWS.atk; ps.flip = false } else if (mx || my) { if (ps.face === "left") { ps.row = SPR_ROWS.right; ps.flip = true } else { ps.row = ps.face === "up" ? SPR_ROWS.up : ps.face === "right" ? SPR_ROWS.right : SPR_ROWS.down; ps.flip = false } } else { ps.row = SPR_ROWS.idle; ps.flip = false } ps.t += dt; while (ps.t >= SPR_FRAME_SEC) { ps.t -= SPR_FRAME_SEC; ps.frame = (ps.frame + 1) % SPR_COLS } }
+        function shoot(dx, dy) { const m = Math.hypot(dx, dy) || 1, nx = dx / m, ny = dy / m; p.fx = nx; p.fy = ny; triggerAttackAnim(); foods.push({ x: p.x + nx * (p.r + 6), y: p.y + ny * (p.r + 6), vx: nx * 360, vy: ny * 360, r: hitR(), life: 1.6 }) }
+        function target() { if (game.mode === "boss" && game.boss && !game.boss.done) return game.boss; const md = p.r + aggroR(); let t = null, td = 1e9; for (const b0 of birds) { const d = Math.hypot(b0.x - p.x, b0.y - p.y); if (d <= md && d < td) { t = b0; td = d } } return t }
+        function updatePlayer(dt) { if (p.stun > 0) { p.stun = Math.max(0, p.stun - dt); updatePlayerAnim(dt, 0, 0); return } let mx = 0, my = 0; if (keys.has("arrowleft") || keys.has("a")) mx--; if (keys.has("arrowright") || keys.has("d")) mx++; if (keys.has("arrowup") || keys.has("w")) my--; if (keys.has("arrowdown") || keys.has("s")) my++; if (mx || my) { const m = Math.hypot(mx, my); mx /= m; my /= m; p.fx = mx; p.fy = my } const bw = mapW(), bh = mapH(); p.x = cl(p.x + mx * moveSp() * dt, p.r, bw - p.r); p.y = cl(p.y + my * moveSp() * dt, p.r, bh - p.r); updatePlayerAnim(dt, mx, my) }
+        function updateBirds(dt) { for (let i = birds.length - 1; i >= 0; i--) { const b0 = birds[i], tx = p.x - b0.x, ty = p.y - b0.y, d = Math.hypot(tx, ty) || 1, px = b0.x, py = b0.y; if (b0.satDone) { b0.satFor -= dt; if (b0.satFor <= 0) { killBird(b0, true); birds.splice(i, 1); continue } } b0.hitCd = Math.max(0, (b0.hitCd || 0) - dt); b0.hitFor = Math.max(0, (b0.hitFor || 0) - dt); if (!b0.satDone) { if (b0.k === "dull" || b0.k === "mom") { b0.x += (tx / d) * b0.sp * dt; b0.y += (ty / d) * b0.sp * dt } else if (b0.k === "adhd") { b0.turn -= dt; if (b0.turn <= 0) adhdTurn(b0); b0.x += b0.dx * b0.sp * dt; b0.y += b0.dy * b0.sp * dt } else if (b0.k === "picky") { b0.x += ((b0.x - p.x) / d) * b0.sp * dt; b0.y += ((b0.y - p.y) / d) * b0.sp * dt } else if (b0.k === "rude") { if (b0.ds === "idle") { b0.dt -= dt; if (b0.dt <= 0) { b0.ds = "wind"; b0.dt = .5 } } else if (b0.ds === "wind") { b0.dt -= dt; if (b0.dt <= 0) { b0.ddx = tx / d; b0.ddy = ty / d; b0.ds = "dash"; b0.df = .48 } } if (b0.ds === "dash") { b0.x += b0.ddx * b0.sp * 3.8 * dt; b0.y += b0.ddy * b0.sp * 3.8 * dt; b0.df -= dt; if (b0.df <= 0) { b0.ds = "idle"; b0.dt = R(1, 2) } } else if (b0.ds === "idle") { b0.x += (tx / d) * b0.sp * dt; b0.y += (ty / d) * b0.sp * dt } } else if (b0.k === "shy") { const age = game.se - b0.born; if (age > b0.limit && b0.sat < b0.max) { birds.splice(i, 1); continue } else { const des = 180, rad = d > des + 24 ? 1 : (d < des - 24 ? -1 : 0), ox = -ty / d, oy = tx / d; b0.x += ((tx / d) * rad + ox * .9) * b0.sp * dt; b0.y += ((ty / d) * rad + oy * .9) * b0.sp * dt } } if (b.w === "sweet" && b0.k !== "shy") { b0.x += (tx / d) * .6 * 35 * dt; b0.y += (ty / d) * .6 * 35 * dt } if (b0.k === "rude" && d <= p.r + b0.r && b0.hitCd <= 0) { game.fat = cl(game.fat + 5, 0, maxFat()); triggerHitAnim(); b0.hitCd = .35 } if (b0.k === "dull" && d <= p.r + b0.r && b0.hitCd <= 0) { game.fat = cl(game.fat + 3, 0, maxFat()); b0.hitCd = .35 } b0.x = cl(b0.x, b0.r, MW - b0.r); b0.y = cl(b0.y, b0.r, MH - b0.r) } b0.avx = b0.x - px; if (Math.abs(b0.avx) > 0.18) b0.flip = b0.avx < 0; b0.at += dt; const sec = b0.asec || BIRD_SPR_FRAME_SEC, cols = b0.acols || BIRD_SPR_COLS; while (b0.at >= sec) { b0.at -= sec; b0.af = (b0.af + 1) % cols } } }
+        function startBoss() { birds.length = 0; foods.length = 0; fx.length = 0; game.se = 0; game.mode = "boss"; p.x = cl(p.x, p.r, W - p.r); p.y = cl(p.y, p.r, H - p.r); const d = DIRS[Math.floor(R(0, DIRS.length))]; game.boss = { x: W * .5, y: H * .35, r: 36, sp: 3 * 35, hp: 50000, sat: 0, dx: Math.cos(R(0, Math.PI * 2)), dy: Math.sin(R(0, Math.PI * 2)), turnAt: 1, dashS: "idle", dashAt: 2.5, dashFor: 0, teleAt: 1.5, teleS: "idle", teleFor: 0, jumpAt: R(10, 15), jumpS: "idle", jumpFor: 0, invulAt: 10, invulFor: 0, invul: false, dir: d, dirBlink: false, dirBlinkAt: 1.25, dirSwapAt: 1.5, blink: false, clearS: "none", clearAt: 0, spray: 0, done: false, af: 0, at: 0, flip: false, avx: 0 } }
+        function updateBoss(dt) {
+            const bo = game.boss; if (!bo || bo.done) return; if (bo.clearS !== "none") { bo.clearAt -= dt; if (bo.clearS === "bounce" && bo.clearAt <= 0) { bo.clearS = "spray"; bo.clearAt = 1.5; bo.spray = 0 } else if (bo.clearS === "spray") { bo.spray += dt; while (bo.spray > .015) { bo.spray -= .015; addFx(cam.x + R(20, W - 20), cam.y + R(40, H - 20), "👍") } if (bo.clearAt <= 0) { bo.done = true; game.thumb = Math.floor(game.thumb * 1.2); showMsg(`챕터 1 클리어! 🎉\n최종 따봉 ${game.thumb}`, 3, () => { game.mode = "title"; titleOv.hidden = false }) } } return }
+            game.se += dt; if (game.se >= BOSS_TIME && bo.sat < bo.hp) { showMsg("아쉽다... 조금만 더 먹이면 됐는데", 2, () => { game.mode = "title"; titleOv.hidden = false }); return }
+            bo.dirBlinkAt -= dt; bo.dirSwapAt -= dt; bo.dirBlink = bo.dirBlinkAt <= 0; if (bo.dirSwapAt <= 0) { bo.dir = DIRS[Math.floor(R(0, DIRS.length))]; bo.dirSwapAt = 1.5; bo.dirBlinkAt = 1.25; bo.dirBlink = false }
+            bo.turnAt -= dt; if (bo.turnAt <= 0) { const ax = bo.x - p.x, ay = bo.y - p.y, ad = Math.hypot(ax, ay) || 1; bo.dx = (ax / ad) + R(-.5, .5); bo.dy = (ay / ad) + R(-.5, .5); const dm = Math.hypot(bo.dx, bo.dy) || 1; bo.dx /= dm; bo.dy /= dm; bo.turnAt = 2 }
+            bo.dashAt -= dt; if (bo.dashS === "idle" && bo.dashAt <= 0) { bo.dashS = "wind"; bo.dashAt = .25 } else if (bo.dashS === "wind" && bo.dashAt <= 0) { const tx = p.x - bo.x, ty = p.y - bo.y, d = Math.hypot(tx, ty) || 1; bo.ddx = tx / d; bo.ddy = ty / d; bo.dashS = "dash"; bo.dashFor = .16 }
+            if (bo.dashS === "dash") { bo.x += bo.ddx * bo.sp * 4 * dt; bo.y += bo.ddy * bo.sp * 4 * dt; bo.dashFor -= dt; if (bo.dashFor <= 0) { bo.dashS = "idle"; bo.dashAt = 2.5 } } else if (bo.dashS === "idle") { bo.x += bo.dx * bo.sp * dt; bo.y += bo.dy * bo.sp * dt }
+            const bw = mapW(), bh = mapH();
+            if (bo.sat >= bo.hp * .5) { bo.teleAt -= dt; if (bo.teleS === "idle" && bo.teleAt <= 0) { bo.teleS = "blink"; bo.teleFor = .25; bo.blink = true } else if (bo.teleS === "blink") { bo.teleFor -= dt; if (bo.teleFor <= 0) { bo.x = R(80, bw - 80); bo.y = R(80, bh - 80); bo.teleS = "freeze"; bo.teleFor = .25; bo.blink = false } } else if (bo.teleS === "freeze") { bo.teleFor -= dt; if (bo.teleFor <= 0) { bo.teleS = "idle"; bo.teleAt = 1.5 } } }
+            const phase2 = bo.sat >= bo.hp * .5; if (!phase2) { if (bo.jumpS === "idle") { bo.jumpAt -= dt; if (bo.jumpAt <= 0) { bo.jumpS = "prep"; bo.jumpFor = .35; bo.blink = true } } else if (bo.jumpS === "prep") { bo.jumpFor -= dt; if (bo.jumpFor <= 0) { let nx = bo.x, ny = bo.y; for (let k = 0; k < 8; k++) { nx = R(80, bw - 80); ny = R(80, bh - 80); if (Math.hypot(nx - bo.x, ny - bo.y) > 70) break } bo.x = nx; bo.y = ny; bo.jumpS = "recover"; bo.jumpFor = .35; bo.blink = false; game.shake = .55; p.stun = Math.max(p.stun, .95) } } else if (bo.jumpS === "recover") { bo.jumpFor -= dt; if (bo.jumpFor <= 0) { bo.jumpS = "idle"; bo.jumpAt = R(10, 15) } } } else { bo.jumpS = "idle"; bo.jumpFor = 0; bo.blink = false; bo.invulAt -= dt; if (!bo.invul && bo.invulAt <= 0) { bo.invul = true; bo.invulFor = 1; bo.invulAt = 10 } else if (bo.invul) { bo.invulFor -= dt; if (bo.invulFor <= 0) bo.invul = false } }
+            bo.avx = bo.dx;
+            bo.at += dt; while (bo.at >= BIRD_SPR_FRAME_SEC) { bo.at -= BIRD_SPR_FRAME_SEC; bo.af = (bo.af + 1) % BIRD_SPR_COLS }
+            if (Math.abs(bo.avx) > 0.18) bo.flip = bo.avx < 0;
+            bo.x = cl(bo.x, bo.r, bw - bo.r); bo.y = cl(bo.y, bo.r, bh - bo.r)
+        }
+        function updateFire(dt) { game.fireCd -= dt; if (game.fireCd <= 0) { const t = target(); if (t) { shoot(t.x - p.x, t.y - p.y); game.fireCd = fireInt() } } }
+        function updateFoods(dt) { for (let i = foods.length - 1; i >= 0; i--) { const f = foods[i]; f.x += f.vx * dt; f.y += f.vy * dt; f.life -= dt; if (f.life <= 0 || f.x < -20 || f.y < -20 || f.x > MW + 20 || f.y > MH + 20) foods.splice(i, 1) } }
+        function tryDrop() { if (game.mode !== "playing") return; const si = it.slots.findIndex(v => v == null); if (si < 0) return; const m = stage().drop || 1; if (Math.random() < ATOM_DROP * m) { it.slots[si] = "atomic"; return } if (Math.random() < ITEM_DROP * m) { const p = ["bac", "cof", "eng"]; it.slots[si] = p[Math.floor(R(0, p.length))] } }
+        function tryDropBossHit() { const si = it.slots.findIndex(v => v == null); if (si < 0) return; if (Math.random() < 0.01) { it.slots[si] = "atomic"; return } if (Math.random() < 0.05) { const p = ["bac", "cof", "eng"]; it.slots[si] = p[Math.floor(R(0, p.length))] } }
+        function gainScale(g) { if (g >= 10) return 2; return 1 + Math.min(g, 10) / 10 }
+        function addFx(x0, y0, t = "👍", g = 1, c = "#16a34a") { fx.push({ x: x0, y: y0, life: 1, t, s: gainScale(g), c }) }
+        function killBird(b0, give = true) { const g = give ? thumbGain(b0.reward) : 0; addFx(b0.x, b0.y - 12, `👍+${g}`, g || 1); if (give) game.thumb += g; tryDrop() }
+        function bossHit(f, bo) { if (bo.invul) { const tx = bo.x - f.x, ty = bo.y - f.y, d = Math.hypot(tx, ty) || 1; f.vx = -(tx / d) * 260; f.vy = -(ty / d) * 260; f.life = Math.min(f.life, .25); return false } const m = Math.hypot(f.vx, f.vy) || 1, nx = f.vx / m, ny = f.vy / m, dot = nx * bo.dir.v.x + ny * bo.dir.v.y; if (dot >= DIR_DOT_REQ) { const dmg = Math.max(1, Math.round(BOSS_BASE_DMG * b.sm * b.dm * (1 - BOSS_REDUCE))); bo.sat = cl(bo.sat + dmg, 0, bo.hp); const g = thumbGain(1); game.thumb += g; addFx(bo.x + R(-10, 10), bo.y - bo.r - 18, `${dmg}`, Math.max(1, dmg / 10), "#facc15"); addFx(bo.x + R(-10, 10), bo.y - bo.r - 34, `👍+${g}`, g); tryDropBossHit(); if (bo.sat >= bo.hp && bo.clearS === "none") { bo.clearS = "bounce"; bo.clearAt = 1 } return true } const tx = bo.x - f.x, ty = bo.y - f.y, d = Math.hypot(tx, ty) || 1; f.vx = -(tx / d) * 260; f.vy = -(ty / d) * 260; f.life = Math.min(f.life, .4); return false }
+        function hitCheck() { if (game.mode === "boss" && game.boss) { const bo = game.boss; for (let j = foods.length - 1; j >= 0; j--) { const f = foods[j], d = Math.hypot(bo.x - f.x, bo.y - f.y); if (d < bo.r + f.r) { if (bossHit(f, bo)) foods.splice(j, 1) } } return } for (let i = birds.length - 1; i >= 0; i--) { const b0 = birds[i]; if (b0.satDone) continue; for (let j = foods.length - 1; j >= 0; j--) { const f = foods[j], d = Math.hypot(b0.x - f.x, b0.y - f.y); if (d < b0.r + f.r) { if (b0.k === "rude" && b0.ds !== "idle") { foods.splice(j, 1); continue } b0.sat = cl(b0.sat + b0.hp * b.sm * b.dm, 0, b0.max); b0.hitFor = .26; foods.splice(j, 1) } } if (b0.sat >= b0.max && !b0.satDone) { b0.satDone = true; b0.satFor = (b0.asec || BIRD_SPR_FRAME_SEC) * (b0.acols || BIRD_SPR_COLS) } } }
+        function updateFx(dt) { for (let i = fx.length - 1; i >= 0; i--) { fx[i].life -= dt; fx[i].y -= 26 * dt; if (fx[i].life <= 0) fx.splice(i, 1) } if (game.atomic > 0) game.atomic = Math.max(0, game.atomic - dt); if (game.boomT > 0) game.boomT = Math.max(0, game.boomT - dt); if (game.shake > 0) game.shake = Math.max(0, game.shake - dt) }
+        function updateFat(dt) { const z = p.r * FAT_ZONE; let n = 0; for (const b0 of birds) { if (Math.hypot(b0.x - p.x, b0.y - p.y) <= z) n += (b0.k === "rude" ? 2 : 1) } if (n >= FAT_MIN) game.fat = cl(game.fat + FAT_INC * dt, 0, maxFat()); else game.fat = cl(game.fat - FAT_DEC * dt, 0, maxFat()) }
+        function updateItems(dt) { ["bac", "cof", "eng"].forEach(k => { if (it.active[k] > 0) it.active[k] = Math.max(0, it.active[k] - dt) }); for (let i = 0; i < 2; i++) { const t = it.slotT[i]; if (t) { t.r -= dt; if (t.r <= 0) it.slotT[i] = null } } }
+        function useSlot(i) { if (game.mode !== "playing" && game.mode !== "boss") return; const id = it.slots[i]; if (!id) return; it.slots[i] = null; if (id === "atomic") { for (const b0 of birds) { const sx = b0.x - cam.x, sy = b0.y - cam.y; if (sx >= -40 && sx <= W + 40 && sy >= -40 && sy <= H + 40) b0.sat = b0.max } if (game.mode === "boss" && game.boss) { const d = Math.max(1, Math.round(game.boss.hp * 0.01)); game.boss.sat = cl(game.boss.sat + d, 0, game.boss.hp); addFx(game.boss.x, game.boss.y - game.boss.r - 16, `💣-${d}`, Math.max(1, d / 100), "#fb923c") } game.atomic = .5; game.boomT = 1.5; addFx(p.x, p.y - 24, "💣 핵폭탄"); return } it.active[id] = (it.active[id] || 0) + ITEM_DUR; if (id === "bac") addFx(p.x, p.y - 24, `🟡 공속 +30% (${it.active[id].toFixed(1)}s)`); if (id === "cof") addFx(p.x, p.y - 24, `☕ 이속 +30% (${it.active[id].toFixed(1)}s)`); if (id === "eng") addFx(p.x, p.y - 24, `⚡ 판정 +50% (${it.active[id].toFixed(1)}s)`) }
+        function camUpdate() { const bw = mapW(), bh = mapH(), vw = viewW(), vh = viewH(); cam.x = cl(p.x - vw * .5, 0, Math.max(0, bw - vw)); cam.y = cl(p.y - vh * .5, 0, Math.max(0, bh - vh)) }
+        function showMsg(t, sec, cb) { msgText.textContent = t; msgOv.hidden = false; game.mode = "message"; game.msgAt = performance.now() + sec * 1000; game.msgCb = cb }
+        function nextStage() { if (game.si >= STAGES.length - 1) { showMsg("보스 등장!", 1.2, startBoss); return } setupStage(game.si + 1); game.mode = "playing" }
+        function checkStage() { if (game.se < stage().t) return; if (game.thumb >= stage().target) nextStage(); else showMsg("아쉽지만 또 가보자~", 2, () => { game.mode = "title"; titleOv.hidden = false }) }
+        function rand3(a) { const s = [...a], o = []; while (s.length && o.length < 3) o.push(s.splice(Math.floor(R(0, s.length)), 1)[0]); return o }
+        function applyOpt(id) { pickedCards.push(id); if (id === "w_spicy") { b.w = "spicy"; b.fr *= 1.25; b.dm *= 1.1 } else if (id === "w_salty") { b.w = "salty"; b.dm *= 1.4; b.fr *= .85 } else if (id === "w_sweet") { b.w = "sweet"; b.ag *= 1.35; b.sm *= 1.3 } else if (id === "up_fr") { if (b.w === "spicy") { b.fr *= 1.14; b.dm *= 1.06 } else b.fr *= 1.1 } else if (id === "up_dm") { if (b.w === "salty") b.dm *= 1.22; else b.dm *= 1.15 } else if (id === "up_ag") { if (b.w === "sweet") { b.ag *= 1.3; b.sm *= 1.08 } else b.ag *= 1.2 } else if (id === "up_mv") b.mv *= 1.1; else if (id === "up_fm") b.fm *= 1.2; else if (id === "up_range") b.ag *= 1.2 }
+        function card(o) { const bt = document.createElement("button"); bt.className = "card"; bt.innerHTML = `<strong>${o.t}</strong>${o.d}`; bt.onclick = () => { applyOpt(o.id); if (game.debugPickLeft > 0) { game.debugPickLeft--; if (!b.evo && game.lv >= 10 && b.w) { levelOv.hidden = true; evolve(); return } if (game.debugPickLeft > 0) { showLvCards(Math.min(20, game.lv + 1)); return } } levelOv.hidden = true; game.mode = game.boss ? "boss" : "playing" }; return bt }
+        function showLvCards(lv) { lvCards.innerHTML = ""; levelOv.hidden = false; game.mode = "levelup"; if (lv === 2 && !b.w) { lvTitle.textContent = "레벨 업! 무기 선택"; lvSub.textContent = "첫 무기를 골라주세요";[{ id: "w_spicy", t: "🌶️ 매운맛 모이", d: "공속 빠름, 단일" }, { id: "w_salty", t: "🧂 짠맛 모이", d: "공격력 높음, 공속 느림" }, { id: "w_sweet", t: "🍬 단맛 모이", d: "어그로, 포만감 증가" }].forEach(o => lvCards.appendChild(card(o))); return } lvTitle.textContent = `레벨 ${lv} 선택`; lvSub.textContent = "옵션 카드 하나를 선택하세요"; rand3([{ id: "up_fr", t: "공속 +10%", d: "매운맛이면 공속+공격력" }, { id: "up_dm", t: "공격력 +15%", d: "짠맛이면 공격력 효율" }, { id: "up_ag", t: "어그로 범위 +20%", d: "단맛이면 시너지" }, { id: "up_mv", t: "이동속도 +10%", d: "기동성 강화" }, { id: "up_fm", t: "피로도 최대치 +20%", d: "패널티 완화" }, { id: "up_range", t: "사거리 +20%", d: "자동 조준 사거리 증가" }]).forEach(o => lvCards.appendChild(card(o))) }
+        function evolve() { if (b.evo) return; b.evo = true; if (b.w === "spicy") { b.fr *= 1.5; b.dm *= 1.3; evoMsg.textContent = "🌶️ 무기 진화! (공속 +50%, 공격력 +30%)" } else if (b.w === "salty") { b.dm *= 1.6; b.fr *= 1.2; evoMsg.textContent = "🧂 무기 진화! (공격력 +60%, 공속 +20%)" } else { if (!b.w) b.w = "sweet"; b.ag *= 2; b.sm *= 1.4; evoMsg.textContent = "🍬 무기 진화! (어그로 2배, 포만감 +40%)" } game.mode = "evolution"; evoOv.hidden = false; game.evoAt = performance.now() + 2000 }
+        function checkLv() { if (game.mode !== "playing" && game.mode !== "boss") return; let lv = 1; for (let i = 0; i < LEVELS.length; i++)if (game.thumb >= LEVELS[i]) lv = i + 2; if (lv <= game.lv) return; game.lv = lv; if (game.lv === 10 && !b.evo) evolve(); else showLvCards(game.lv) }
+        function col(k, s) { if (k === "dull") return "#9ca3af"; if (k === "adhd") return "#fb923c"; if (k === "picky") return "#3b82f6"; if (k === "rude") return s && s !== "idle" ? "#f472b6" : "#a855f7"; if (k === "shy") return "#facc15"; return "#f9a8d4" }
+        function cir(x0, y0, r, c0) { x.beginPath(); x.arc(x0, y0, r, 0, Math.PI * 2); x.fillStyle = c0; x.fill() }
+        function drawBirdFallback(b0, yOff = 0) { cir(b0.x, b0.y + yOff, b0.r, col(b0.k, b0.ds)); cir(b0.x + 6, b0.y - 3 + yOff, 3.5, "rgba(0,0,0,.25)"); cir(b0.x - 2, b0.y + 1 + yOff, 2, "#111827") }
+        function birdAnimRow(b0) { if (b0.satDone) return BIRD_SPR_ROWS.sat; if (b0.k === "rude" && b0.ds === "dash") return BIRD_SPR_ROWS.special; if ((b0.hitFor || 0) > 0) return BIRD_SPR_ROWS.special; return BIRD_SPR_ROWS.move }
+        function drawBirdSprite(kind, obj, yOff = 0, forcedRow = null) { const r = pigeonImgs[kind], m = birdMeta(kind); if (!r || !r.ready) { if (kind === "boss") { const c0 = game.boss && game.boss.invul ? "#94a3b8" : "#facc15"; cir(obj.x, obj.y + yOff, obj.r, c0); cir(obj.x + 14, obj.y - 8 + yOff, 8, game.boss && game.boss.invul ? "#64748b" : "#b45309") } else drawBirdFallback(obj, yOff); return } const cols = m.cols || 1, rows = m.rows || 1, fw = Math.floor(r.img.width / cols), fh = Math.floor(r.img.height / rows); const freezeFirst = (kind === "mom" || kind === "boss"); const row = freezeFirst ? 0 : (forcedRow == null ? birdAnimRow(obj) : forcedRow), col = freezeFirst ? 0 : ((obj.af || 0) % cols), sx = col * fw, sy = row * fh, base = obj.r * 2, dw = Math.round(base * (m.sw || 1)), dh = Math.round(base * (m.sh || 1)), dx = Math.round(obj.x - dw * .5), dy = Math.round(m.bottom ? (obj.y + yOff + obj.r - dh) : (obj.y - obj.r + yOff)); if (obj.flip) { x.save(); x.translate(Math.round(obj.x), 0); x.scale(-1, 1); x.drawImage(r.img, sx, sy, fw, fh, Math.round(-dw * .5), dy, dw, dh); x.restore(); return } x.drawImage(r.img, sx, sy, fw, fh, dx, dy, dw, dh) }
+        function drawFallbackSprite() { const d = p.r * 2, s = d / 16, baseX = p.x - p.r, baseY = p.y - p.r, f = ps.frame, ox = ps.flip ? 16 : 0, k = ps.flip ? -1 : 1, P = (px, py, pw, ph, col) => { x.fillStyle = col; x.fillRect(baseX + (ox + px * k) * s, baseY + py * s, pw * s * k, ph * s) }; P(5, 1, 6, 5, "#f5d0a5"); P(4, 0, 8, 2, "#334155"); P(5, 6, 6, 5, "#e5e7eb"); P(5, 11, 6, 4, "#475569"); P(7, 3, 1, 1, "#111827"); P(9, 3, 1, 1, "#111827"); if (ps.row === SPR_ROWS.atk) P(11, 7, 4, 2, "#f97316"); if (ps.row === SPR_ROWS.hit) P(4, 0, 8, 1, "#ef4444"); if (ps.row === SPR_ROWS.up || ps.row === SPR_ROWS.down || ps.row === SPR_ROWS.right) { const swing = [0, 1, 0, -1][f]; P(3, 7 + swing, 2, 3, "#cbd5e1"); P(11, 7 - swing, 2, 3, "#cbd5e1") } }
+        function drawPlayer() { if (!ps.ready) { drawFallbackSprite(); return } const sx = ps.frame * SPR_W, sy = ps.row * SPR_H, d = p.r * 2, dx = p.x - p.r, dy = p.y - p.r; if (ps.flip) { x.save(); x.translate(p.x, 0); x.scale(-1, 1); x.drawImage(ps.img, sx, sy, SPR_W, SPR_H, -p.r, dy, d, d); x.restore(); return } x.drawImage(ps.img, sx, sy, SPR_W, SPR_H, dx, dy, d, d) }
+        function drawBackground(bw, bh) {
+            if (!bgImg.ready) return;
+            const tw = Math.max(96, bgImg.img.width * BG_TILE_SCALE), th = Math.max(96, bgImg.img.height * BG_TILE_SCALE);
+            for (let yy = 0; yy < bh + th; yy += th) for (let xx = 0; xx < bw + tw; xx += tw) x.drawImage(bgImg.img, 0, 0, bgImg.img.width, bgImg.img.height, xx, yy, tw, th);
+        }
+        function draw() {
+            x.clearRect(0, 0, W, H); x.save(); const sx = game.shake > 0 ? R(-8, 8) * game.shake : 0, sy = game.shake > 0 ? R(-8, 8) * game.shake : 0; x.scale(VIEW_ZOOM, VIEW_ZOOM); x.translate(-cam.x + sx / VIEW_ZOOM, -cam.y + sy / VIEW_ZOOM); const bw = mapW(), bh = mapH(); drawBackground(bw, bh); for (let yy = 0; yy <= bh; yy += 80) { x.strokeStyle = "rgba(56,106,63,.08)"; x.beginPath(); x.moveTo(0, yy + .5); x.lineTo(bw, yy + .5); x.stroke() } for (let xx = 0; xx <= bw; xx += 80) { x.strokeStyle = "rgba(56,106,63,.06)"; x.beginPath(); x.moveTo(xx + .5, 0); x.lineTo(xx + .5, bh); x.stroke() } x.strokeStyle = "rgba(14,116,144,.35)"; x.lineWidth = 5; x.strokeRect(0, 0, bw, bh);
+            for (const b0 of birds) { drawBirdSprite(b0.k, b0); const bw = 28, ra = b0.sat / b0.max; if (ra < 1) { x.fillStyle = "rgba(17,24,39,.2)"; x.fillRect(b0.x - bw / 2, b0.y - 20, bw, 4); x.fillStyle = "#f59e0b"; x.fillRect(b0.x - bw / 2, b0.y - 20, bw * ra, 4) } if (b0.k === "shy" && !b0.escape && b0.sat < b0.max) { const l = cl(b0.limit - (game.se - b0.born), 0, b0.limit); x.font = "bold 12px 'Segoe UI',sans-serif"; x.fillStyle = "#111827"; x.fillText(`${l.toFixed(1)}s`, b0.x - 14, b0.y - 26) } }
+            if (game.boss) { const bo = game.boss, bob = bo.clearS === "bounce" ? Math.sin(performance.now() / 1000 * 12) * 10 : 0, half = Math.acos(DIR_DOT_REQ), center = Math.atan2(-bo.dir.v.y, -bo.dir.v.x); x.globalAlpha = bo.blink ? .35 : 1; drawBirdSprite("boss", bo, bob, bo.clearS === "bounce" ? BIRD_SPR_ROWS.sat : (bo.invul || bo.dashS === "dash" ? BIRD_SPR_ROWS.special : BIRD_SPR_ROWS.move)); x.beginPath(); x.moveTo(bo.x, bo.y + bob); x.arc(bo.x, bo.y + bob, bo.r + 4, center - half, center + half); x.closePath(); x.fillStyle = "rgba(59,130,246,.35)"; x.fill(); x.globalAlpha = 1; if (!bo.dirBlink || Math.floor(performance.now() / 120) % 2 === 0) { x.font = "bold 30px 'Segoe UI',sans-serif"; x.fillStyle = "#111827"; x.fillText(bo.dir.a, bo.x - 11, bo.y - bo.r - 14 + bob) } }
+            for (const f of foods) cir(f.x, f.y, f.r, "#92400e"); drawPlayer();
+            const pr = p.r * 2, fr = cl(game.fat / maxFat(), 0, 1); x.fillStyle = "#ffffff"; x.fillRect(p.x - pr / 2, p.y - p.r - 14, pr, 5); x.fillStyle = "#ef4444"; x.fillRect(p.x - pr / 2, p.y - p.r - 14, pr * fr, 5);
+            for (const e of fx) { x.globalAlpha = Math.max(e.life, 0); const sc = e.s || 1; x.font = `bold ${Math.round(16 * sc)}px 'Segoe UI',sans-serif`; x.fillStyle = e.c || "#16a34a"; x.fillText(e.t, e.x - 16 * sc, e.y); x.globalAlpha = 1 }
+            if (game.atomic > 0) { const a = game.atomic / .5, vw = viewW(), vh = viewH(); x.fillStyle = `rgba(255,255,255,${.35 * a})`; x.fillRect(cam.x, cam.y, vw, vh); for (let i = 0; i < 14; i++)cir(cam.x + R(0, vw), cam.y + R(0, vh), R(10, 38), `rgba(253,224,71,${.3 * a})`) } x.restore();
+            if (game.boomT > 0) {
+                const t = 1.5 - game.boomT, a = t <= .5 ? 1 : cl(1 - (t - .5), 0, 1);
+                if (boomImg.ready) { x.save(); x.globalAlpha = cl(a * 1.15, 0, 1); x.drawImage(boomImg.img, 0, 0, W, H); x.restore() }
+            }
+        }
+        function hud() {
+            if (game.mode === "boss" && game.boss) { bossHud.style.display = "block"; const bo = game.boss, left = Math.max(0, BOSS_TIME - game.se), bp = cl(bo.sat / bo.hp, 0, 1); hudCenter.textContent = `보스전 | 목표 👍 ${game.thumb}${spriteDebugTxt()}`; hudTimer.textContent = `${left.toFixed(1)}s`; bossFill.style.width = `${bp * 100}%`; bossHpTxt.textContent = `${(bp * 100).toFixed(1)}%`; bossDirEl.textContent = bo.dirBlink && Math.floor(performance.now() / 120) % 2 === 1 ? " " : bo.dir.a; bossTime.textContent = `${left.toFixed(1)}s` } else { bossHud.style.display = "none"; const s = stage(), left = Math.max(0, s.t - game.se); hudCenter.textContent = `${s.id} | 목표 👍 ${s.target}${spriteDebugTxt()}`; hudTimer.textContent = `${left.toFixed(1)}s` }
+            hudLevel.textContent = `LV ${game.lv}`; const prevNeed = game.lv <= 1 ? 0 : LEVELS[Math.min(game.lv - 2, LEVELS.length - 1)], nextNeed = LEVELS[Math.min(game.lv - 1, LEVELS.length - 1)] ?? prevNeed, cur = cl(game.thumb, prevNeed, nextNeed), xpPct = nextNeed > prevNeed ? ((cur - prevNeed) / (nextNeed - prevNeed)) * 100 : 100; xpText.textContent = game.lv >= LEVELS.length + 1 ? "XP MAX" : `XP ${cur} / ${nextNeed}`; xpFill.style.width = `${cl(xpPct, 0, 100)}%`; for (let i = 0; i < 2; i++) { const it0 = it.slots[i], bt = sBtns[i]; if (it0) { bt.classList.remove("empty"); bt.textContent = it0 === "bac" ? "🟡" : it0 === "cof" ? "☕" : it0 === "eng" ? "⚡" : "💣" } else { bt.classList.add("empty"); bt.textContent = "+" } sTimers[i].textContent = "" }
+            const buffs = []; if (it.active.bac > 0) buffs.push({ t: "공속", r: it.active.bac }); if (it.active.cof > 0) buffs.push({ t: "이속", r: it.active.cof }); if (it.active.eng > 0) buffs.push({ t: "판정", r: it.active.eng }); buffUi.innerHTML = buffs.map(v => `<div class="buff">${v.t}<br>${v.r.toFixed(1)}s</div>`).join("")
+        }
+        function spriteDebugTxt() { const miss = Object.entries(pigeonImgs).filter(([, v]) => !v.ready).map(([k]) => k); return miss.length ? ` | SPRITE MISS: ${miss.join(",")}` : "" }
+        function tick(ts) { const dt = Math.min((ts - last) / 1000, .033); last = ts; if (game.mode === "playing") { game.se += dt; updateSpawn(); updatePlayer(dt); updateBirds(dt); updateFire(dt); updateFoods(dt); hitCheck(); updateFat(dt); updateItems(dt); updateFx(dt); checkLv(); checkStage() } else if (game.mode === "boss") { updatePlayer(dt); updateBoss(dt); updateFire(dt); updateFoods(dt); hitCheck(); updateFat(dt); updateItems(dt); updateFx(dt); checkLv() } else if (game.mode === "evolution") { updateItems(dt); updateFx(dt); if (performance.now() >= game.evoAt) { evoOv.hidden = true; if (game.debugPickLeft > 0) { showLvCards(20) } else game.mode = game.boss ? "boss" : "playing" } } else if (game.mode === "message") { updateItems(dt); updateFx(dt); if (performance.now() >= game.msgAt) { msgOv.hidden = true; const f = game.msgCb; game.msgCb = null; if (f) f() } } else { updateItems(dt); updateFx(dt) } camUpdate(); draw(); hud(); requestAnimationFrame(tick) }
+        addEventListener("keydown", e => { const k = e.key.toLowerCase(); keys.add(k); if (k === "c") { if (statsOv.hidden) { const fatPct = (game.fat / maxFat() * 100).toFixed(1), aspd = (Math.max(0, 1 - game.fat / maxFat()) * 100).toFixed(1); statsBody.textContent = `무기: ${b.w || "없음"}\n공속 배율: x${b.fr.toFixed(2)}\n공격 배율: x${b.dm.toFixed(2)}\n포만 배율: x${b.sm.toFixed(2)}\n어그로 배율: x${b.ag.toFixed(2)}\n이속 배율: x${b.mv.toFixed(2)}\n피로 최대 배율: x${b.fm.toFixed(2)}\n피격 범위 배율: x${b.hr.toFixed(2)}\n현재 피로도: ${fatPct}%\n피로 반영 공격속도: ${aspd}%\n\n선택 카드:\n${pickedCards.length ? pickedCards.join(", ") : "없음"}`; statsOv.hidden = false; game.mode = "stats" } else { statsOv.hidden = true; game.mode = game.boss ? "boss" : "playing" } } }); addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+        sBtns[0].onclick = () => useSlot(0); sBtns[1].onclick = () => useSlot(1);
+        $("startBtn").onclick = () => { resetRun(); titleOv.hidden = true }; $("exitBtn").onclick = () => { if (window.close) window.close(); titleResult.textContent = "브라우저 탭을 닫아 종료하세요." };
+        statsCloseBtn.onclick = () => { statsOv.hidden = true; game.mode = game.boss ? "boss" : "playing"; };
+        devPanel.querySelectorAll("button[data-stage]").forEach(btn => { btn.onclick = () => { const n = Number(btn.dataset.stage) - 1; setupStage(Math.max(0, Math.min(4, n))); game.mode = "playing"; titleOv.hidden = true; msgOv.hidden = true; levelOv.hidden = true; evoOv.hidden = true; statsOv.hidden = true; }; });
+        devBossBtn.onclick = () => { startBoss(); titleOv.hidden = true; msgOv.hidden = true; levelOv.hidden = true; evoOv.hidden = true; statsOv.hidden = true; };
+        devMaxBtn.onclick = () => { if (game.lv >= 20) return; const need = Math.max(0, 20 - game.lv); game.lv = 20; game.debugPickLeft = need; if (game.debugPickLeft <= 0) return; if (!b.w) { showLvCards(2); return } showLvCards(20); };
+        camUpdate(); draw(); hud(); requestAnimationFrame(ts => { last = ts; tick(ts) });
+    </script>
+</body>
+
+</html>
