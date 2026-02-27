@@ -159,3 +159,22 @@ Run the small test suite:
 ```
 python -m unittest discover -s tests
 ```
+
+## GitHub PR troubleshooting
+
+If creating a PR fails with a message similar to "GitHub resource not found", verify that the
+local repository has a configured remote and that you have access to it.
+
+```bash
+git remote -v
+```
+
+If no `origin` is listed, add one and push your branch first:
+
+```bash
+git remote add origin <your_repo_url>
+git push -u origin <branch_name>
+```
+
+Then open the PR again from GitHub (or your PR tool). Most "resource not found" errors in this
+project were caused by the branch not being connected to an accessible remote repository.
