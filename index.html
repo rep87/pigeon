@@ -40,6 +40,7 @@
         #hudLevel {
             font-weight: 800
         }
+        #hudHeart{font-size:12px;font-weight:800;color:#be123c;margin-bottom:2px}
 
         #hudRight {
             text-align: right;
@@ -259,7 +260,7 @@
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            top: 92px;
+            top: 108px;
             z-index: 5;
             display: flex;
             gap: 8px
@@ -311,6 +312,7 @@
     <div class="wrap">
         <div class="hud">
             <div>
+                <div id="hudHeart">❤️ 200</div>
                 <div id="hudLevel">LV 1</div>
                 <div id="xpText">XP 0 / 10</div>
                 <div id="xpBar">
@@ -343,9 +345,20 @@
         <div class="overlay" id="titleOv">
             <div class="panel">
                 <h1>오늘도 모이 난사 중</h1>
-                <div class="btns"><button id="startBtn">시작</button><button disabled>상점 (준비 중)</button><button
+                <div class="btns"><button id="startBtn">시작</button><button id="shopBtn">상점</button><button
                         id="exitBtn">종료</button></div>
                 <div id="titleResult" style="margin-top:10px;font-weight:700"></div>
+            </div>
+        </div>
+        <div class="overlay" id="shopOv" hidden>
+            <div class="panel">
+                <h2 style="margin:0 0 6px">상점</h2>
+                <div id="shopHeart" style="font-weight:800;margin-bottom:10px">보유 ❤️ 200</div>
+                <div class="btns">
+                    <button id="buySaltyBtn">🧂 짠맛 모이 (200❤️)</button>
+                    <button id="buySweetBtn">🍬 단맛 모이 (200❤️)</button>
+                    <button id="shopCloseBtn">닫기</button>
+                </div>
             </div>
         </div>
         <div class="overlay" id="levelOv" hidden>
@@ -376,10 +389,11 @@
     <script>
         "use strict";
         const $ = id => document.getElementById(id), c = $("game"), x = c.getContext("2d");
-        const hudLevel = $("hudLevel"), hudCenter = $("hudCenter"), hudTimer = $("hudTimer"), xpText = $("xpText"), xpFill = $("xpFill");
+        const hudHeart = $("hudHeart"), hudLevel = $("hudLevel"), hudCenter = $("hudCenter"), hudTimer = $("hudTimer"), xpText = $("xpText"), xpFill = $("xpFill");
         const bossHud = $("bossHud"), bossDirEl = $("bossDir"), bossFill = $("bossFill"), bossHpTxt = $("bossHpTxt"), bossTime = $("bossTime");
-        const titleOv = $("titleOv"), levelOv = $("levelOv"), evoOv = $("evoOv"), msgOv = $("msgOv"), msgText = $("msgText"), statsOv = $("statsOv"), statsBody = $("statsBody"), statsCloseBtn = $("statsCloseBtn");
+        const titleOv = $("titleOv"), levelOv = $("levelOv"), evoOv = $("evoOv"), msgOv = $("msgOv"), msgText = $("msgText"), statsOv = $("statsOv"), statsBody = $("statsBody"), statsCloseBtn = $("statsCloseBtn"), shopOv = $("shopOv");
         const titleResult = $("titleResult"), lvTitle = $("lvTitle"), lvSub = $("lvSub"), lvCards = $("lvCards"), evoMsg = $("evoMsg"), buffUi = $("buffUi"), devPanel = $("devPanel"), devBossBtn = $("devBossBtn"), devMaxBtn = $("devMaxBtn");
+        const shopBtn = $("shopBtn"), shopHeart = $("shopHeart"), buySaltyBtn = $("buySaltyBtn"), buySweetBtn = $("buySweetBtn"), shopCloseBtn = $("shopCloseBtn");
         const sBtns = [$("s0"), $("s1")], sTimers = [$("st0"), $("st1")];
         const PLAYER_SPRITE_PATH = "player_sprite.png";
         const BOOM_IMAGE_PATH = "boom.webp";
@@ -394,7 +408,7 @@
         const ITEM_DROP = .15, ATOM_DROP = .05, ITEM_DUR = 5, FAT_ZONE = 1.5, FAT_MIN = 3, FAT_INC = 22, FAT_DEC = 18, BOSS_TIME = 90, BOSS_REDUCE = .5, BOSS_BASE_DMG = 60;
         const DIRS = [{ v: { x: 0, y: -1 }, a: "↑" }, { v: { x: 0, y: 1 }, a: "↓" }, { v: { x: -1, y: 0 }, a: "←" }, { v: { x: 1, y: 0 }, a: "→" }], DIR_DOT_REQ = .92;
         const STAGES = [{ id: "S1", t: 60, target: 180, drop: 1, sp: { dull: 200, adhd: 20 } }, { id: "S2", t: 60, target: 350, drop: 1, sp: { dull: 50, adhd: 150, picky: 50 } }, { id: "S3", t: 60, target: 560, drop: 1, sp: { dull: 50, adhd: 60, rude: 200 } }, { id: "S4 보너스", t: 30, target: 840, drop: 2, sp: { mom: 150 } }, { id: "S5", t: 90, target: 1300, drop: 1, sp: { dull: 60, picky: 60, shy: 200 } }];
-        const game = { mode: "title", si: 0, se: 0, thumb: 0, lv: 1, fat: 0, fireCd: 0, spawn: {}, msgAt: 0, msgCb: null, evoAt: 0, atomic: 0, boomT: 0, boss: null, shake: 0, debugPickLeft: 0 };
+        const game = { mode: "title", si: 0, se: 0, thumb: 0, hearts: 200, shop: { salty: false, sweet: false }, lv: 1, fat: 0, fireCd: 0, spawn: {}, msgAt: 0, msgCb: null, evoAt: 0, atomic: 0, boomT: 0, boss: null, shake: 0, debugPickLeft: 0 };
         const cam = { x: 0, y: 0 }, p = { x: MW / 2, y: MH / 2, r: 14, fx: 1, fy: 0, stun: 0 }, b = { w: null, fr: 1, dm: 1, sm: 1, ag: 1, mv: 1, fm: 1, hr: 1, evo: false };
         const SPR_W = 16, SPR_H = 16, SPR_COLS = 4, SPR_FRAME_SEC = .15, SPR_ROWS = { down: 0, up: 1, right: 2, left: 3, atk: 4, hit: 5, idle: 6 };
         const ps = { img: new Image(), ready: false, fail: false, frame: 0, t: 0, face: "down", state: "idle", lock: 0, row: SPR_ROWS.idle, flip: false };
@@ -427,8 +441,17 @@
         const stage = () => STAGES[game.si], maxFat = () => 100 * b.fm;
         const fireInt = () => BASE_FIRE / (b.fr * (it.active.bac > 0 ? 1.3 : 1) * Math.max(1 - game.fat / maxFat(), 0.02));
         const moveSp = () => BASE_MS * b.mv * (it.active.cof > 0 ? 1.3 : 1), hitR = () => 5 * b.hr * (it.active.eng > 0 ? 1.5 : 1), aggroR = () => p.r * 2 * AUTO_RANGE * b.ag;
+        function settleHearts() { const g = Math.floor(game.thumb * 0.01); game.hearts += g; return g; }
+        function goTitleWithReward(prefix = "") { const g = settleHearts(); game.mode = "title"; titleOv.hidden = false; shopOv.hidden = true; titleResult.textContent = `${prefix}${prefix ? " " : ""}정산 +${g}❤️ (보유 ${game.hearts}❤️)`; }
+        function refreshShopUi() {
+            shopHeart.textContent = `보유 ❤️ ${game.hearts}`;
+            buySaltyBtn.disabled = game.shop.salty || game.hearts < 200;
+            buySweetBtn.disabled = game.shop.sweet || game.hearts < 200;
+            buySaltyBtn.textContent = game.shop.salty ? "🧂 짠맛 모이 (구매완료)" : "🧂 짠맛 모이 (200❤️)";
+            buySweetBtn.textContent = game.shop.sweet ? "🍬 단맛 모이 (구매완료)" : "🍬 단맛 모이 (200❤️)";
+        }
         function setupStage(i) { game.si = i; game.se = 0; game.spawn = {}; foods.length = 0; birds.length = 0; fx.length = 0; game.boss = null; Object.entries(stage().sp).forEach(([k, n]) => game.spawn[k] = { n, s: 0, next: 0, intv: stage().t / n }) }
-        function resetRun() { game.mode = "playing"; game.thumb = 0; game.lv = 1; game.fat = 0; game.fireCd = 0; game.atomic = 0; game.boomT = 0; game.msgCb = null; game.msgAt = 0; game.evoAt = 0; game.boss = null; game.shake = 0; pickedCards.length = 0; b.w = null; b.fr = b.dm = b.sm = b.ag = b.mv = b.fm = b.hr = 1; b.evo = false; it.slots = [null, null]; it.active = { bac: 0, cof: 0, eng: 0 }; it.slotT = [null, null]; p.x = MW / 2; p.y = MH / 2; p.fx = 1; p.fy = 0; p.stun = 0; ps.frame = 0; ps.t = 0; ps.face = "down"; ps.state = "idle"; ps.lock = 0; ps.row = SPR_ROWS.idle; ps.flip = false; setupStage(0); titleOv.hidden = true; levelOv.hidden = true; evoOv.hidden = true; msgOv.hidden = true; statsOv.hidden = true; titleResult.textContent = "" }
+        function resetRun() { game.mode = "playing"; game.thumb = 0; game.lv = 1; game.fat = 0; game.fireCd = 0; game.atomic = 0; game.boomT = 0; game.msgCb = null; game.msgAt = 0; game.evoAt = 0; game.boss = null; game.shake = 0; pickedCards.length = 0; b.w = null; b.fr = b.dm = b.sm = b.ag = b.mv = b.fm = b.hr = 1; b.evo = false; it.slots = [null, null]; it.active = { bac: 0, cof: 0, eng: 0 }; it.slotT = [null, null]; p.x = MW / 2; p.y = MH / 2; p.fx = 1; p.fy = 0; p.stun = 0; ps.frame = 0; ps.t = 0; ps.face = "down"; ps.state = "idle"; ps.lock = 0; ps.row = SPR_ROWS.idle; ps.flip = false; setupStage(0); titleOv.hidden = true; shopOv.hidden = true; levelOv.hidden = true; evoOv.hidden = true; msgOv.hidden = true; statsOv.hidden = true; titleResult.textContent = "" }
         function edgePos() { const pad = 18, s = Math.floor(R(0, 8)); if (s === 0) return { x: R(pad, MW - pad), y: pad }; if (s === 1) return { x: MW - pad, y: pad }; if (s === 2) return { x: MW - pad, y: R(pad, MH - pad) }; if (s === 3) return { x: MW - pad, y: MH - pad }; if (s === 4) return { x: R(pad, MW - pad), y: MH - pad }; if (s === 5) return { x: pad, y: MH - pad }; if (s === 6) return { x: pad, y: R(pad, MH - pad) }; return { x: pad, y: pad } }
         function nearPos() { const a = R(0, Math.PI * 2), d = R(220, 380); return { x: cl(p.x + Math.cos(a) * d, 24, MW - 24), y: cl(p.y + Math.sin(a) * d, 24, MH - 24) } }
         function adhdTurn(b0) {
@@ -458,8 +481,8 @@
         function updateBirds(dt) { for (let i = birds.length - 1; i >= 0; i--) { const b0 = birds[i], tx = p.x - b0.x, ty = p.y - b0.y, d = Math.hypot(tx, ty) || 1, px = b0.x, py = b0.y; if (b0.satDone) { b0.satFor -= dt; if (b0.satFor <= 0) { killBird(b0, true); birds.splice(i, 1); continue } } b0.hitCd = Math.max(0, (b0.hitCd || 0) - dt); b0.hitFor = Math.max(0, (b0.hitFor || 0) - dt); if (!b0.satDone) { if (b0.k === "dull" || b0.k === "mom") { b0.x += (tx / d) * b0.sp * dt; b0.y += (ty / d) * b0.sp * dt } else if (b0.k === "adhd") { b0.turn -= dt; if (b0.turn <= 0) adhdTurn(b0); b0.x += b0.dx * b0.sp * dt; b0.y += b0.dy * b0.sp * dt } else if (b0.k === "picky") { b0.x += ((b0.x - p.x) / d) * b0.sp * dt; b0.y += ((b0.y - p.y) / d) * b0.sp * dt } else if (b0.k === "rude") { if (b0.ds === "idle") { b0.dt -= dt; if (b0.dt <= 0) { b0.ds = "wind"; b0.dt = .5 } } else if (b0.ds === "wind") { b0.dt -= dt; if (b0.dt <= 0) { b0.ddx = tx / d; b0.ddy = ty / d; b0.ds = "dash"; b0.df = .48 } } if (b0.ds === "dash") { b0.x += b0.ddx * b0.sp * 3.8 * dt; b0.y += b0.ddy * b0.sp * 3.8 * dt; b0.df -= dt; if (b0.df <= 0) { b0.ds = "idle"; b0.dt = R(1, 2) } } else if (b0.ds === "idle") { b0.x += (tx / d) * b0.sp * dt; b0.y += (ty / d) * b0.sp * dt } } else if (b0.k === "shy") { const age = game.se - b0.born; if (age > b0.limit && b0.sat < b0.max) { birds.splice(i, 1); continue } else { const des = 180, rad = d > des + 24 ? 1 : (d < des - 24 ? -1 : 0), ox = -ty / d, oy = tx / d; b0.x += ((tx / d) * rad + ox * .9) * b0.sp * dt; b0.y += ((ty / d) * rad + oy * .9) * b0.sp * dt } } if (b.w === "sweet" && b0.k !== "shy") { b0.x += (tx / d) * .6 * 35 * dt; b0.y += (ty / d) * .6 * 35 * dt } if (b0.k === "rude" && d <= p.r + b0.r && b0.hitCd <= 0) { game.fat = cl(game.fat + 5, 0, maxFat()); triggerHitAnim(); b0.hitCd = .35 } if (b0.k === "dull" && d <= p.r + b0.r && b0.hitCd <= 0) { game.fat = cl(game.fat + 3, 0, maxFat()); b0.hitCd = .35 } b0.x = cl(b0.x, b0.r, MW - b0.r); b0.y = cl(b0.y, b0.r, MH - b0.r) } b0.avx = b0.x - px; if (Math.abs(b0.avx) > 0.18) b0.flip = b0.avx < 0; b0.at += dt; const sec = b0.asec || BIRD_SPR_FRAME_SEC, cols = b0.acols || BIRD_SPR_COLS; while (b0.at >= sec) { b0.at -= sec; b0.af = (b0.af + 1) % cols } } }
         function startBoss() { birds.length = 0; foods.length = 0; fx.length = 0; game.se = 0; game.mode = "boss"; p.x = cl(p.x, p.r, W - p.r); p.y = cl(p.y, p.r, H - p.r); const d = DIRS[Math.floor(R(0, DIRS.length))]; game.boss = { x: W * .5, y: H * .35, r: 36, sp: 3 * 35, hp: 50000, sat: 0, dx: Math.cos(R(0, Math.PI * 2)), dy: Math.sin(R(0, Math.PI * 2)), turnAt: 1, dashS: "idle", dashAt: 2.5, dashFor: 0, teleAt: 1.5, teleS: "idle", teleFor: 0, jumpAt: R(10, 15), jumpS: "idle", jumpFor: 0, invulAt: 10, invulFor: 0, invul: false, dir: d, dirBlink: false, dirBlinkAt: 1.25, dirSwapAt: 1.5, blink: false, clearS: "none", clearAt: 0, spray: 0, done: false, af: 0, at: 0, flip: false, avx: 0 } }
         function updateBoss(dt) {
-            const bo = game.boss; if (!bo || bo.done) return; if (bo.clearS !== "none") { bo.clearAt -= dt; if (bo.clearS === "bounce" && bo.clearAt <= 0) { bo.clearS = "spray"; bo.clearAt = 1.5; bo.spray = 0 } else if (bo.clearS === "spray") { bo.spray += dt; while (bo.spray > .015) { bo.spray -= .015; addFx(cam.x + R(20, W - 20), cam.y + R(40, H - 20), "👍") } if (bo.clearAt <= 0) { bo.done = true; game.thumb = Math.floor(game.thumb * 1.2); showMsg(`챕터 1 클리어! 🎉\n최종 따봉 ${game.thumb}`, 3, () => { game.mode = "title"; titleOv.hidden = false }) } } return }
-            game.se += dt; if (game.se >= BOSS_TIME && bo.sat < bo.hp) { showMsg("아쉽다... 조금만 더 먹이면 됐는데", 2, () => { game.mode = "title"; titleOv.hidden = false }); return }
+            const bo = game.boss; if (!bo || bo.done) return; if (bo.clearS !== "none") { bo.clearAt -= dt; if (bo.clearS === "bounce" && bo.clearAt <= 0) { bo.clearS = "spray"; bo.clearAt = 1.5; bo.spray = 0 } else if (bo.clearS === "spray") { bo.spray += dt; while (bo.spray > .015) { bo.spray -= .015; addFx(cam.x + R(20, W - 20), cam.y + R(40, H - 20), "👍") } if (bo.clearAt <= 0) { bo.done = true; game.thumb = Math.floor(game.thumb * 1.2); showMsg(`챕터 1 클리어! 🎉\n최종 따봉 ${game.thumb}`, 3, () => { goTitleWithReward("챕터 클리어!"); }) } } return }
+            game.se += dt; if (game.se >= BOSS_TIME && bo.sat < bo.hp) { showMsg("아쉽다... 조금만 더 먹이면 됐는데", 2, () => { goTitleWithReward(); }); return }
             bo.dirBlinkAt -= dt; bo.dirSwapAt -= dt; bo.dirBlink = bo.dirBlinkAt <= 0; if (bo.dirSwapAt <= 0) { bo.dir = DIRS[Math.floor(R(0, DIRS.length))]; bo.dirSwapAt = 1.5; bo.dirBlinkAt = 1.25; bo.dirBlink = false }
             bo.turnAt -= dt; if (bo.turnAt <= 0) { const ax = bo.x - p.x, ay = bo.y - p.y, ad = Math.hypot(ax, ay) || 1; bo.dx = (ax / ad) + R(-.5, .5); bo.dy = (ay / ad) + R(-.5, .5); const dm = Math.hypot(bo.dx, bo.dy) || 1; bo.dx /= dm; bo.dy /= dm; bo.turnAt = 2 }
             bo.dashAt -= dt; if (bo.dashS === "idle" && bo.dashAt <= 0) { bo.dashS = "wind"; bo.dashAt = .25 } else if (bo.dashS === "wind" && bo.dashAt <= 0) { const tx = p.x - bo.x, ty = p.y - bo.y, d = Math.hypot(tx, ty) || 1; bo.ddx = tx / d; bo.ddy = ty / d; bo.dashS = "dash"; bo.dashFor = .16 }
@@ -488,11 +511,11 @@
         function camUpdate() { const bw = mapW(), bh = mapH(), vw = viewW(), vh = viewH(); cam.x = cl(p.x - vw * .5, 0, Math.max(0, bw - vw)); cam.y = cl(p.y - vh * .5, 0, Math.max(0, bh - vh)) }
         function showMsg(t, sec, cb) { msgText.textContent = t; msgOv.hidden = false; game.mode = "message"; game.msgAt = performance.now() + sec * 1000; game.msgCb = cb }
         function nextStage() { if (game.si >= STAGES.length - 1) { showMsg("보스 등장!", 1.2, startBoss); return } setupStage(game.si + 1); game.mode = "playing" }
-        function checkStage() { if (game.se < stage().t) return; if (game.thumb >= stage().target) nextStage(); else showMsg("아쉽지만 또 가보자~", 2, () => { game.mode = "title"; titleOv.hidden = false }) }
+        function checkStage() { if (game.se < stage().t) return; if (game.thumb >= stage().target) nextStage(); else showMsg("아쉽지만 또 가보자~", 2, () => { goTitleWithReward(); }) }
         function rand3(a) { const s = [...a], o = []; while (s.length && o.length < 3) o.push(s.splice(Math.floor(R(0, s.length)), 1)[0]); return o }
         function applyOpt(id) { pickedCards.push(id); if (id === "w_spicy") { b.w = "spicy"; b.fr *= 1.25; b.dm *= 1.1 } else if (id === "w_salty") { b.w = "salty"; b.dm *= 1.4; b.fr *= .85 } else if (id === "w_sweet") { b.w = "sweet"; b.ag *= 1.35; b.sm *= 1.3 } else if (id === "up_fr") { if (b.w === "spicy") { b.fr *= 1.14; b.dm *= 1.06 } else b.fr *= 1.1 } else if (id === "up_dm") { if (b.w === "salty") b.dm *= 1.22; else b.dm *= 1.15 } else if (id === "up_ag") { if (b.w === "sweet") { b.ag *= 1.3; b.sm *= 1.08 } else b.ag *= 1.2 } else if (id === "up_mv") b.mv *= 1.1; else if (id === "up_fm") b.fm *= 1.2; else if (id === "up_range") b.ag *= 1.2 }
         function card(o) { const bt = document.createElement("button"); bt.className = "card"; bt.innerHTML = `<strong>${o.t}</strong>${o.d}`; bt.onclick = () => { applyOpt(o.id); if (game.debugPickLeft > 0) { game.debugPickLeft--; if (!b.evo && game.lv >= 10 && b.w) { levelOv.hidden = true; evolve(); return } if (game.debugPickLeft > 0) { showLvCards(Math.min(20, game.lv + 1)); return } } levelOv.hidden = true; game.mode = game.boss ? "boss" : "playing" }; return bt }
-        function showLvCards(lv) { lvCards.innerHTML = ""; levelOv.hidden = false; game.mode = "levelup"; if (lv === 2 && !b.w) { lvTitle.textContent = "레벨 업! 무기 선택"; lvSub.textContent = "첫 무기를 골라주세요";[{ id: "w_spicy", t: "🌶️ 매운맛 모이", d: "공속 빠름, 단일" }, { id: "w_salty", t: "🧂 짠맛 모이", d: "공격력 높음, 공속 느림" }, { id: "w_sweet", t: "🍬 단맛 모이", d: "어그로, 포만감 증가" }].forEach(o => lvCards.appendChild(card(o))); return } lvTitle.textContent = `레벨 ${lv} 선택`; lvSub.textContent = "옵션 카드 하나를 선택하세요"; rand3([{ id: "up_fr", t: "공속 +10%", d: "매운맛이면 공속+공격력" }, { id: "up_dm", t: "공격력 +15%", d: "짠맛이면 공격력 효율" }, { id: "up_ag", t: "어그로 범위 +20%", d: "단맛이면 시너지" }, { id: "up_mv", t: "이동속도 +10%", d: "기동성 강화" }, { id: "up_fm", t: "피로도 최대치 +20%", d: "패널티 완화" }, { id: "up_range", t: "사거리 +20%", d: "자동 조준 사거리 증가" }]).forEach(o => lvCards.appendChild(card(o))) }
+        function showLvCards(lv) { lvCards.innerHTML = ""; levelOv.hidden = false; game.mode = "levelup"; if (lv === 2 && !b.w) { lvTitle.textContent = "레벨 업! 무기 선택"; lvSub.textContent = "첫 무기는 매운맛 고정"; [{ id: "w_spicy", t: "🌶️ 매운맛 모이", d: "공속 빠름" }].forEach(o => lvCards.appendChild(card(o))); return } lvTitle.textContent = `레벨 ${lv} 선택`; lvSub.textContent = "옵션 카드 하나를 선택하세요"; rand3([{ id: "up_fr", t: "공속 +10%", d: "공속 증가" }, { id: "up_dm", t: "공격력 +15%", d: "공격력 증가" }, { id: "up_ag", t: "어그로 범위 +20%", d: "어그로 범위 증가" }, { id: "up_mv", t: "이동속도 +10%", d: "이동속도 증가" }, { id: "up_fm", t: "피로도 최대치 +20%", d: "피로도 최대치 증가" }, { id: "up_range", t: "사거리 +20%", d: "사거리 증가" }]).forEach(o => lvCards.appendChild(card(o))) }
         function evolve() { if (b.evo) return; b.evo = true; if (b.w === "spicy") { b.fr *= 1.5; b.dm *= 1.3; evoMsg.textContent = "🌶️ 무기 진화! (공속 +50%, 공격력 +30%)" } else if (b.w === "salty") { b.dm *= 1.6; b.fr *= 1.2; evoMsg.textContent = "🧂 무기 진화! (공격력 +60%, 공속 +20%)" } else { if (!b.w) b.w = "sweet"; b.ag *= 2; b.sm *= 1.4; evoMsg.textContent = "🍬 무기 진화! (어그로 2배, 포만감 +40%)" } game.mode = "evolution"; evoOv.hidden = false; game.evoAt = performance.now() + 2000 }
         function checkLv() { if (game.mode !== "playing" && game.mode !== "boss") return; let lv = 1; for (let i = 0; i < LEVELS.length; i++)if (game.thumb >= LEVELS[i]) lv = i + 2; if (lv <= game.lv) return; game.lv = lv; if (game.lv === 10 && !b.evo) evolve(); else showLvCards(game.lv) }
         function col(k, s) { if (k === "dull") return "#9ca3af"; if (k === "adhd") return "#fb923c"; if (k === "picky") return "#3b82f6"; if (k === "rude") return s && s !== "idle" ? "#f472b6" : "#a855f7"; if (k === "shy") return "#facc15"; return "#f9a8d4" }
@@ -521,7 +544,8 @@
             }
         }
         function hud() {
-            if (game.mode === "boss" && game.boss) { bossHud.style.display = "block"; const bo = game.boss, left = Math.max(0, BOSS_TIME - game.se), bp = cl(bo.sat / bo.hp, 0, 1); hudCenter.textContent = `보스전 | 목표 👍 ${game.thumb}${spriteDebugTxt()}`; hudTimer.textContent = `${left.toFixed(1)}s`; bossFill.style.width = `${bp * 100}%`; bossHpTxt.textContent = `${(bp * 100).toFixed(1)}%`; bossDirEl.textContent = bo.dirBlink && Math.floor(performance.now() / 120) % 2 === 1 ? " " : bo.dir.a; bossTime.textContent = `${left.toFixed(1)}s` } else { bossHud.style.display = "none"; const s = stage(), left = Math.max(0, s.t - game.se); hudCenter.textContent = `${s.id} | 목표 👍 ${s.target}${spriteDebugTxt()}`; hudTimer.textContent = `${left.toFixed(1)}s` }
+            if (game.mode === "boss" && game.boss) { bossHud.style.display = "block"; const bo = game.boss, left = Math.max(0, BOSS_TIME - game.se), bp = cl(bo.sat / bo.hp, 0, 1); hudCenter.textContent = `보스전 | 현재 👍 ${game.thumb}${spriteDebugTxt()}`; hudTimer.textContent = `${left.toFixed(1)}s`; bossFill.style.width = `${bp * 100}%`; bossHpTxt.textContent = `${(bp * 100).toFixed(1)}%`; bossDirEl.textContent = bo.dirBlink && Math.floor(performance.now() / 120) % 2 === 1 ? " " : bo.dir.a; bossTime.textContent = `${left.toFixed(1)}s` } else { bossHud.style.display = "none"; const s = stage(), left = Math.max(0, s.t - game.se); hudCenter.textContent = `${s.id} | 👍 ${game.thumb} / ${s.target}${spriteDebugTxt()}`; hudTimer.textContent = `${left.toFixed(1)}s` }
+            hudHeart.textContent = `❤️ ${game.hearts}`;
             hudLevel.textContent = `LV ${game.lv}`; const prevNeed = game.lv <= 1 ? 0 : LEVELS[Math.min(game.lv - 2, LEVELS.length - 1)], nextNeed = LEVELS[Math.min(game.lv - 1, LEVELS.length - 1)] ?? prevNeed, cur = cl(game.thumb, prevNeed, nextNeed), xpPct = nextNeed > prevNeed ? ((cur - prevNeed) / (nextNeed - prevNeed)) * 100 : 100; xpText.textContent = game.lv >= LEVELS.length + 1 ? "XP MAX" : `XP ${cur} / ${nextNeed}`; xpFill.style.width = `${cl(xpPct, 0, 100)}%`; for (let i = 0; i < 2; i++) { const it0 = it.slots[i], bt = sBtns[i]; if (it0) { bt.classList.remove("empty"); bt.textContent = it0 === "bac" ? "🟡" : it0 === "cof" ? "☕" : it0 === "eng" ? "⚡" : "💣" } else { bt.classList.add("empty"); bt.textContent = "+" } sTimers[i].textContent = "" }
             const buffs = []; if (it.active.bac > 0) buffs.push({ t: "공속", r: it.active.bac }); if (it.active.cof > 0) buffs.push({ t: "이속", r: it.active.cof }); if (it.active.eng > 0) buffs.push({ t: "판정", r: it.active.eng }); buffUi.innerHTML = buffs.map(v => `<div class="buff">${v.t}<br>${v.r.toFixed(1)}s</div>`).join("")
         }
@@ -529,7 +553,22 @@
         function tick(ts) { const dt = Math.min((ts - last) / 1000, .033); last = ts; if (game.mode === "playing") { game.se += dt; updateSpawn(); updatePlayer(dt); updateBirds(dt); updateFire(dt); updateFoods(dt); hitCheck(); updateFat(dt); updateItems(dt); updateFx(dt); checkLv(); checkStage() } else if (game.mode === "boss") { updatePlayer(dt); updateBoss(dt); updateFire(dt); updateFoods(dt); hitCheck(); updateFat(dt); updateItems(dt); updateFx(dt); checkLv() } else if (game.mode === "evolution") { updateItems(dt); updateFx(dt); if (performance.now() >= game.evoAt) { evoOv.hidden = true; if (game.debugPickLeft > 0) { showLvCards(20) } else game.mode = game.boss ? "boss" : "playing" } } else if (game.mode === "message") { updateItems(dt); updateFx(dt); if (performance.now() >= game.msgAt) { msgOv.hidden = true; const f = game.msgCb; game.msgCb = null; if (f) f() } } else { updateItems(dt); updateFx(dt) } camUpdate(); draw(); hud(); requestAnimationFrame(tick) }
         addEventListener("keydown", e => { const k = e.key.toLowerCase(); keys.add(k); if (k === "c") { if (statsOv.hidden) { const fatPct = (game.fat / maxFat() * 100).toFixed(1), aspd = (Math.max(0, 1 - game.fat / maxFat()) * 100).toFixed(1); statsBody.textContent = `무기: ${b.w || "없음"}\n공속 배율: x${b.fr.toFixed(2)}\n공격 배율: x${b.dm.toFixed(2)}\n포만 배율: x${b.sm.toFixed(2)}\n어그로 배율: x${b.ag.toFixed(2)}\n이속 배율: x${b.mv.toFixed(2)}\n피로 최대 배율: x${b.fm.toFixed(2)}\n피격 범위 배율: x${b.hr.toFixed(2)}\n현재 피로도: ${fatPct}%\n피로 반영 공격속도: ${aspd}%\n\n선택 카드:\n${pickedCards.length ? pickedCards.join(", ") : "없음"}`; statsOv.hidden = false; game.mode = "stats" } else { statsOv.hidden = true; game.mode = game.boss ? "boss" : "playing" } } }); addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
         sBtns[0].onclick = () => useSlot(0); sBtns[1].onclick = () => useSlot(1);
-        $("startBtn").onclick = () => { resetRun(); titleOv.hidden = true }; $("exitBtn").onclick = () => { if (window.close) window.close(); titleResult.textContent = "브라우저 탭을 닫아 종료하세요." };
+        $("startBtn").onclick = () => { resetRun(); titleOv.hidden = true };
+        $("shopBtn").onclick = () => { refreshShopUi(); shopOv.hidden = false; };
+        shopCloseBtn.onclick = () => { shopOv.hidden = true; };
+        buySaltyBtn.onclick = () => {
+            if (game.shop.salty || game.hearts < 200) return;
+            game.hearts -= 200;
+            game.shop.salty = true;
+            refreshShopUi();
+        };
+        buySweetBtn.onclick = () => {
+            if (game.shop.sweet || game.hearts < 200) return;
+            game.hearts -= 200;
+            game.shop.sweet = true;
+            refreshShopUi();
+        };
+        $("exitBtn").onclick = () => { if (window.close) window.close(); titleResult.textContent = "브라우저 탭을 닫아 종료하세요." };
         statsCloseBtn.onclick = () => { statsOv.hidden = true; game.mode = game.boss ? "boss" : "playing"; };
         devPanel.querySelectorAll("button[data-stage]").forEach(btn => { btn.onclick = () => { const n = Number(btn.dataset.stage) - 1; setupStage(Math.max(0, Math.min(4, n))); game.mode = "playing"; titleOv.hidden = true; msgOv.hidden = true; levelOv.hidden = true; evoOv.hidden = true; statsOv.hidden = true; }; });
         devBossBtn.onclick = () => { startBoss(); titleOv.hidden = true; msgOv.hidden = true; levelOv.hidden = true; evoOv.hidden = true; statsOv.hidden = true; };
