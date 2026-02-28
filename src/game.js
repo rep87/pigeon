@@ -82,6 +82,8 @@ const BOSS_CUT_1_PATH = withCacheBust("assets/ui/boss_1101_cut_1.png");
 const BOSS_CUT_2_PATH = withCacheBust("assets/ui/boss_1101_cut_2.png");
 const BGM_PATH = withCacheBust("assets/audio/bgm.mp3");
 const BOSS_IMPACT_PATH = withCacheBust("assets/audio/boss_1101_impact.mp3");
+const BOSS_BGM1_PATH = withCacheBust("assets/audio/boss_1101_bgm1.mp3");
+const BOSS_BGM2_PATH = withCacheBust("assets/audio/boss_1101_bgm2.mp3");
 const BACKGROUND_IMAGE_PATH = withCacheBust("assets/bg/background.png");
 const SPICY_SKILL_ZONE_PATH = withCacheBust("assets/ui/spicy_skill_zone.png");
 const SPICY_BULLET_PATH = withCacheBust("assets/weapon/fire_1.png");
@@ -161,12 +163,15 @@ const game = { mode: "title", si: 0, se: 0, thumb: 0, hearts: 200, shop: { salty
         const bossCut2Img = { img: new Image(), ready: false };
         const bgmAudio = new Audio(BGM_PATH);
         const bossImpactAudio = new Audio(BOSS_IMPACT_PATH);
+        const bossBgm1Audio = new Audio(BOSS_BGM1_PATH);
+        const bossBgm2Audio = new Audio(BOSS_BGM2_PATH);
         const bgImg = { img: new Image(), ready: false };
         const heartIcon = { img: new Image(), ready: false };
         const thumbIcon = { img: new Image(), ready: false };
         const spicyZone = { img: new Image(), ready: false, fail: false, try: 0 };
         const spicyBullet = { img: new Image(), ready: false, fail: false, try: 0 };
         let bgmReady = false;
+        let bossBgmSequenceArmed = false;
         const iconHtml = (type, label = "", size = HUD_ICON_SIZE) => {
             if (type === "heart" && heartIcon.ready) return `<img src="${heartIcon.img.src}" width="${size}" height="${size}" style="vertical-align:middle;margin-right:4px"/>${label}`;
             if (type === "thumb" && thumbIcon.ready) return `<img src="${thumbIcon.img.src}" width="${size}" height="${size}" style="vertical-align:middle;margin-right:4px"/>${label}`;
@@ -191,6 +196,21 @@ const game = { mode: "title", si: 0, se: 0, thumb: 0, hearts: 200, shop: { salty
         });
         bossImpactAudio.loop = false;
         bossImpactAudio.preload = "auto";
+        bossBgm1Audio.loop = false;
+        bossBgm2Audio.loop = false;
+        bossBgm1Audio.preload = "auto";
+        bossBgm2Audio.preload = "auto";
+        bossBgm1Audio.volume = bgmAudio.volume;
+        bossBgm2Audio.volume = bgmAudio.volume;
+        bossImpactAudio.volume = bgmAudio.volume;
+        bossImpactAudio.addEventListener("ended", () => {
+            if (!bossBgmSequenceArmed) return;
+            playBossBgm1();
+        });
+        bossBgm1Audio.addEventListener("ended", () => {
+            if (!bossBgmSequenceArmed) return;
+            playBossBgm2();
+        });
         bgImg.img.src = BACKGROUND_IMAGE_PATH; bgImg.img.onload = () => bgImg.ready = true;
         loadSpriteWithCandidates(heartIcon, HEART_ICON_FALLBACKS);
         loadSpriteWithCandidates(thumbIcon, THUMB_ICON_FALLBACKS);
@@ -211,6 +231,38 @@ const game = { mode: "title", si: 0, se: 0, thumb: 0, hearts: 200, shop: { salty
             if (!bossImpactAudio) return;
             bossImpactAudio.pause();
             bossImpactAudio.currentTime = 0;
+        }
+        function stopBossBgm(resetSequence = true) {
+            bossBgm1Audio.pause();
+            bossBgm1Audio.currentTime = 0;
+            bossBgm2Audio.pause();
+            bossBgm2Audio.currentTime = 0;
+            if (resetSequence) bossBgmSequenceArmed = false;
+        }
+        function playBossBgm1() {
+            bossBgm1Audio.currentTime = 0;
+            try {
+                const p = bossBgm1Audio.play();
+                if (p && p.catch) p.catch(() => { });
+            } catch (err) {
+                console.warn("[boss bgm1] audio play failed", err);
+            }
+        }
+        function playBossBgm2() {
+            bossBgm2Audio.currentTime = 0;
+            try {
+                const p = bossBgm2Audio.play();
+                if (p && p.catch) p.catch(() => { });
+            } catch (err) {
+                console.warn("[boss bgm2] audio play failed", err);
+            }
+        }
+        function startBossAudioSequence() {
+            stopBgm();
+            stopBossImpact();
+            stopBossBgm(false);
+            bossBgmSequenceArmed = true;
+            playBossImpact();
         }
         function readBgmVolume() {
             try {
@@ -234,6 +286,9 @@ const game = { mode: "title", si: 0, se: 0, thumb: 0, hearts: 200, shop: { salty
         function setBgmVolume(v, persist = true, labelEl = null) {
             const vol = clamp01(v);
             bgmAudio.volume = vol;
+            bossImpactAudio.volume = vol;
+            bossBgm1Audio.volume = vol;
+            bossBgm2Audio.volume = vol;
             syncBgmUi(vol);
             if (persist) {
                 try { localStorage.setItem(BGM_VOLUME_KEY, String(vol)); } catch { }
@@ -243,6 +298,8 @@ const game = { mode: "title", si: 0, se: 0, thumb: 0, hearts: 200, shop: { salty
         }
         function startBgm() {
             if (!bgmAudio) return;
+            stopBossImpact();
+            stopBossBgm();
             if (!bgmReady) {
                 bgmAudio.load();
             }
@@ -454,6 +511,8 @@ function buildBirdSpritePack(kind) {
             Object.entries(stage().sp).forEach(([k, n]) => game.spawn[k] = { n, s: 0, next: 0, intv: stage().t / n })
         }
         function resetRun() {
+            stopBossImpact();
+            stopBossBgm();
             game.mode = "playing";
             game.thumb = 0;
             game.lv = 1;
@@ -762,11 +821,9 @@ function buildBirdSpritePack(kind) {
             fx.length = 0;
             game.se = 0;
             game.mode = "boss_intro";
-            stopBossImpact();
-            playBossImpact();
+            startBossAudioSequence();
         }
         function startBoss() {
-            stopBossImpact();
             game.bossIntro = null;
             const bc = animalsCfg.kinds.boss || {};
             birds.length = 0;
@@ -1447,7 +1504,6 @@ function buildBirdSpritePack(kind) {
                 if (intro.phase === 1 && intro.t >= BOSS_CUT_HOLD_SEC) {
                     intro.phase = 2;
                     intro.t = 0;
-                    playBossImpact();
                 } else if (intro.phase === 2 && intro.t >= BOSS_CUT_HOLD_SEC) {
                     startBoss();
                 }
