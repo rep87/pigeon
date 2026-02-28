@@ -1,0 +1,22 @@
+{
+  "stages": [
+    { "id": "S1", "time": 60, "targetThumb": 180, "dropMultiplier": 1, "spawn": { "dull": 200, "adhd": 20 } },
+    { "id": "S2", "time": 60, "targetThumb": 350, "dropMultiplier": 1, "spawn": { "dull": 50, "adhd": 150, "picky": 50 } },
+    { "id": "S3", "time": 60, "targetThumb": 560, "dropMultiplier": 1, "spawn": { "dull": 50, "adhd": 60, "rude": 200 } },
+    { "id": "S4 보너스", "time": 30, "targetThumb": 840, "dropMultiplier": 2, "spawn": { "mom": 150 } },
+    { "id": "S5", "time": 90, "targetThumb": 1300, "dropMultiplier": 1, "spawn": { "dull": 60, "picky": 60, "shy": 200 } }
+  ],
+  "bossWave": {
+    "timeLimit": 90,
+    "hp": 50000,
+    "damage": 60,
+    "reduction": 0.5,
+    "dirs": [
+      { "v": { "x": 0, "y": -1 }, "a": "↑" },
+      { "v": { "x": 0, "y": 1 }, "a": "↓" },
+      { "v": { "x": -1, "y": 0 }, "a": "←" },
+      { "v": { "x": 1, "y": 0 }, "a": "→" }
+    ],
+    "dirDotReq": 0.92
+  }
+}

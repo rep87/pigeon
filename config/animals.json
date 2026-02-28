@@ -1,0 +1,92 @@
+{
+  "kinds": {
+    "dull": {
+      "code": "1001",
+      "hp": 20,
+      "speed": 70,
+      "radius": 12,
+      "reward": 1,
+      "behavior": "chase",
+      "sprite": {
+        "walk": "assets/pigeon/1001/pigeon_1001_walk.png",
+        "eat": "assets/pigeon/1001/pigeon_1001_eat.png",
+        "full": "assets/pigeon/1001/pigeon_1001_full.png"
+      },
+      "animation": {
+        "walk": { "cols": 4, "rows": 2, "sec": 0.18, "frames": 8, "loop": true },
+        "eat": { "cols": 4, "rows": 2, "sec": 0.18, "frames": 8, "loop": false },
+        "full": { "cols": 4, "rows": 2, "sec": 0.18, "frames": 8, "loop": false }
+      },
+      "dropMultiplier": 1,
+      "meta": { "cols": 6, "rows": 3, "sec": 0.18, "sw": 1.2, "sh": 1.44, "bottom": true }
+    },
+    "adhd": {
+      "code": "1002",
+      "hp": 45,
+      "speed": 189,
+      "radius": 13,
+      "reward": 1,
+      "behavior": "adhd",
+      "sprite": "assets/pigeon/1002/pigeon_1002.png",
+      "dropMultiplier": 1,
+      "meta": { "cols": 6, "rows": 3, "sec": 0.18, "sw": 1, "sh": 1, "bottom": true },
+      "turnRange": [0.28, 0.65]
+    },
+    "picky": {
+      "code": "1003",
+      "hp": 80,
+      "speed": 126,
+      "radius": 13,
+      "reward": 1,
+      "behavior": "flee",
+      "sprite": "assets/pigeon/1003/pigeon_1003.png",
+      "dropMultiplier": 1,
+      "meta": { "cols": 6, "rows": 3, "sec": 0.18, "sw": 1, "sh": 1, "bottom": true }
+    },
+    "rude": {
+      "code": "1004",
+      "hp": 90,
+      "speed": 175,
+      "radius": 13,
+      "reward": 1,
+      "behavior": "dash",
+      "sprite": "assets/pigeon/1004/pigeon_1004.png",
+      "dropMultiplier": 1,
+      "meta": { "cols": 6, "rows": 3, "sec": 0.18, "sw": 1, "sh": 1, "bottom": true }
+    },
+    "shy": {
+      "code": "1005",
+      "hp": 120,
+      "speed": 105,
+      "radius": 13,
+      "reward": 2,
+      "behavior": "orbit_escape",
+      "sprite": "assets/pigeon/1005/pigeon_1005.png",
+      "dropMultiplier": 1,
+      "meta": { "cols": 5, "rows": 3, "sec": 0.18, "sw": 1, "sh": 1, "bottom": true },
+      "escapeLimit": 8
+    },
+    "mom": {
+      "code": "1006",
+      "hp": 220,
+      "speed": 70,
+      "radius": 15,
+      "reward": 3,
+      "behavior": "chase",
+      "sprite": "assets/pigeon/1006/pigeon_1006.png",
+      "dropMultiplier": 1,
+      "meta": { "cols": 5, "rows": 3, "sec": 0.18, "sw": 1, "sh": 1, "bottom": true }
+    },
+    "boss": {
+      "code": "1101",
+      "hp": 50000,
+      "speed": 105,
+      "radius": 36,
+      "reward": 0,
+      "behavior": "boss",
+      "sprite": "assets/pigeon/1101/pigeon_1101.png",
+      "dropMultiplier": 1,
+      "meta": { "cols": 5, "rows": 3, "sec": 0.18, "sw": 1, "sh": 1, "bottom": true }
+    }
+  }
+}

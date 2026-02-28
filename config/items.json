@@ -1,0 +1,15 @@
+{
+  "drop": {
+    "item": 0.15,
+    "atom": 0.05,
+    "duration": 5,
+    "bossItem": 0.05,
+    "bossAtom": 0.01
+  },
+  "items": {
+    "bac": { "name": "공속", "icon": "🟡", "fireRateMul": 1.3 },
+    "cof": { "name": "이속", "icon": "☕", "moveMul": 1.3 },
+    "eng": { "name": "판정", "icon": "⚡", "hitMul": 1.5 },
+    "atomic": { "name": "핵폭탄", "icon": "💣", "bossDamageRatio": 0.01 }
+  }
+}
