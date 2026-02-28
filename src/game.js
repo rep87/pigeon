@@ -172,6 +172,7 @@ const game = { mode: "title", si: 0, se: 0, thumb: 0, hearts: 200, shop: { salty
         const spicyBullet = { img: new Image(), ready: false, fail: false, try: 0 };
         let bgmReady = false;
         let bossBgmSequenceArmed = false;
+        let bossImpactPlayCount = 0;
         const iconHtml = (type, label = "", size = HUD_ICON_SIZE) => {
             if (type === "heart" && heartIcon.ready) return `<img src="${heartIcon.img.src}" width="${size}" height="${size}" style="vertical-align:middle;margin-right:4px"/>${label}`;
             if (type === "thumb" && thumbIcon.ready) return `<img src="${thumbIcon.img.src}" width="${size}" height="${size}" style="vertical-align:middle;margin-right:4px"/>${label}`;
@@ -205,6 +206,7 @@ const game = { mode: "title", si: 0, se: 0, thumb: 0, hearts: 200, shop: { salty
         bossImpactAudio.volume = bgmAudio.volume;
         bossImpactAudio.addEventListener("ended", () => {
             if (!bossBgmSequenceArmed) return;
+            if (bossImpactPlayCount < 2) return;
             playBossBgm1();
         });
         bossBgm1Audio.addEventListener("ended", () => {
@@ -237,7 +239,10 @@ const game = { mode: "title", si: 0, se: 0, thumb: 0, hearts: 200, shop: { salty
             bossBgm1Audio.currentTime = 0;
             bossBgm2Audio.pause();
             bossBgm2Audio.currentTime = 0;
-            if (resetSequence) bossBgmSequenceArmed = false;
+            if (resetSequence) {
+                bossBgmSequenceArmed = false;
+                bossImpactPlayCount = 0;
+            }
         }
         function playBossBgm1() {
             bossBgm1Audio.currentTime = 0;
@@ -262,6 +267,7 @@ const game = { mode: "title", si: 0, se: 0, thumb: 0, hearts: 200, shop: { salty
             stopBossImpact();
             stopBossBgm(false);
             bossBgmSequenceArmed = true;
+            bossImpactPlayCount = 1;
             playBossImpact();
         }
         function readBgmVolume() {
@@ -1504,6 +1510,10 @@ function buildBirdSpritePack(kind) {
                 if (intro.phase === 1 && intro.t >= BOSS_CUT_HOLD_SEC) {
                     intro.phase = 2;
                     intro.t = 0;
+                    if (bossBgmSequenceArmed) {
+                        bossImpactPlayCount = 2;
+                        playBossImpact();
+                    }
                 } else if (intro.phase === 2 && intro.t >= BOSS_CUT_HOLD_SEC) {
                     startBoss();
                 }
