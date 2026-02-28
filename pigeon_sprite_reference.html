@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>비둘기 스프라이트 레퍼런스 시트</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; font-family: 'Courier New', monospace; color: #e0e0e0; padding: 24px; }
+  h1 { font-size: 18px; color: #ffd700; margin-bottom: 4px; letter-spacing: 2px; text-transform: uppercase; }
+  .subtitle { font-size: 11px; color: #888; margin-bottom: 28px; letter-spacing: 1px; }
+  .pigeon-block { background: #0d0d1a; border: 2px solid #2a2a3e; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+  .pigeon-block:hover { border-color: #444; }
+  .pigeon-title { font-size: 14px; color: #ffd700; font-weight: bold; margin-bottom: 4px; letter-spacing: 1px; }
+  .pigeon-desc { font-size: 10px; color: #888; margin-bottom: 12px; line-height: 1.6; }
+  .pigeon-desc span { color: #aaa; }
+  .row-label { font-size: 9px; color: #4472C4; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+  .sprite-row { display: flex; gap: 4px; margin-bottom: 14px; align-items: flex-end; }
+  .frame-wrap { display: flex; flex-direction: column; align-items: center; }
+  canvas { image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid #2a2a3e; background: #111122; }
+  canvas:hover { border-color: #ffd700; }
+  .frame-num { font-size: 8px; color: #444; text-align: center; margin-top: 2px; width: 64px; }
+  .preview-label { font-size: 9px; color: #666; text-align: center; margin-top: 2px; width: 64px; }
+  .preview-row { display: flex; gap: 12px; margin-top: 8px; padding-top: 10px; border-top: 1px solid #1a1a2e; align-items: flex-end; }
+  .ai-prompt { margin-top: 12px; background: #0a0a18; border-left: 3px solid #ffd700; padding: 10px 12px; border-radius: 0 4px 4px 0; }
+  .ai-prompt-title { font-size: 9px; color: #ffd700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .ai-prompt-text { font-size: 10px; color: #aaa; line-height: 1.7; white-space: pre-wrap; }
+  .copy-btn { margin-top: 6px; background: #2a2a3e; border: 1px solid #444; color: #aaa; font-size: 9px; padding: 4px 10px; cursor: pointer; border-radius: 3px; font-family: 'Courier New', monospace; }
+  .copy-btn:hover { background: #3a3a4e; color: #ffd700; }
+  hr { border: none; border-top: 1px solid #2a2a3e; margin: 10px 0; }
+</style>
+</head>
+<body>
+<h1>🐦 오늘도 모이 난사 중 — 비둘기 스프라이트 레퍼런스</h1>
+<p class="subtitle">reference sheet v1.0 · 16×16px per frame · scale ×4 display · 4col × 3row per pigeon</p>
+
+<div id="container"></div>
+
+<script>
+const SCALE = 4;
+const SIZE = 16;
+
+const C = {
+  trans: null,
+  // 공통
+  outline: '#1a1a2a',
+  eye: '#1a1a2a',
+  beak: '#e8a020',
+  beakDark: '#c07010',
+  feet: '#d89020',
+  wing: '#888',
+  wingLight: '#aaa',
+  wingDark: '#666',
+  // 무던한 - 회색
+  p1body: '#9a9aaa', p1light: '#b8b8c8', p1dark: '#7a7a8a', p1neck: '#c8c8d8',
+  // ADHD - 주황/노랑
+  p2body: '#e87820', p2light: '#f0a040', p2dark: '#c06010', p2neck: '#f0c040',
+  // 편식 - 파랑
+  p3body: '#4080d0', p3light: '#60a0f0', p3dark: '#2060b0', p3neck: '#80c0ff',
+  // 진상 - 보라 (눈 붉음)
+  p4body: '#8840c0', p4light: '#a060e0', p4dark: '#6020a0', p4neck: '#c080ff',
+  p4eye: '#cc2020',
+  // 눈치 - 노랑
+  p5body: '#d8c020', p5light: '#f0e040', p5dark: '#a09010', p5neck: '#fff080',
+  // 엄마 - 분홍
+  p6body: '#e080a0', p6light: '#f0a0c0', p6dark: '#c06080', p6neck: '#ffc0d8',
+  // 아기보스 - 황금
+  p7body: '#d4a820', p7light: '#f0d060', p7dark: '#a07810', p7neck: '#ffe080',
+  p7crown: '#ff4040',
+  // 따봉/만족
+  thumbs: '#ffd700',
+  heart: '#ff6b9d',
+  star: '#fff',
+};
+
+function dp(ctx, x, y, color) {
+  if (!color) return;
+  ctx.fillStyle = color;
+  ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+}
+
+// 기본 비둘기 몸체 그리기 함수
+function drawPigeonBase(ctx, bc, bl, bd, bn, eyeC, frame, row) {
+  // row: 0=이동, 1=피격/피로, 2=만족
+  eyeC = eyeC || C.eye;
+  const bob = (row === 0) ? [0,0,1,0][frame] : 0;
+  const shake = (row === 1) ? [0,1,0,-1][frame] : 0;
+  const flash = (row === 1 && frame % 2 === 0);
+
+  const body = flash ? '#ffffff' : bc;
+  const light = flash ? '#ffeeee' : bl;
+  const dark = flash ? '#ffcccc' : bd;
+  const neck = flash ? '#ffffff' : bn;
+
+  const bY = bob; // body Y offset
+  const sX = shake;
+
+  // 몸통
+  dp(ctx, 4+sX, 5+bY, C.outline);
+  dp(ctx, 5+sX, 4+bY, C.outline); dp(ctx, 6+sX, 4+bY, C.outline); dp(ctx, 7+sX, 4+bY, C.outline); dp(ctx, 8+sX, 4+bY, C.outline); dp(ctx, 9+sX, 4+bY, C.outline); dp(ctx, 10+sX, 4+bY, C.outline);
+  dp(ctx, 4+sX, 5+bY, C.outline); dp(ctx, 5+sX, 5+bY, body); dp(ctx, 6+sX, 5+bY, light); dp(ctx, 7+sX, 5+bY, light); dp(ctx, 8+sX, 5+bY, body); dp(ctx, 9+sX, 5+bY, dark); dp(ctx, 10+sX, 5+bY, dark); dp(ctx, 11+sX, 5+bY, C.outline);
+  dp(ctx, 4+sX, 6+bY, C.outline); dp(ctx, 5+sX, 6+bY, light); dp(ctx, 6+sX, 6+bY, light); dp(ctx, 7+sX, 6+bY, body); dp(ctx, 8+sX, 6+bY, body); dp(ctx, 9+sX, 6+bY, dark); dp(ctx, 10+sX, 6+bY, dark); dp(ctx, 11+sX, 6+bY, C.outline);
+  dp(ctx, 4+sX, 7+bY, C.outline); dp(ctx, 5+sX, 7+bY, body); dp(ctx, 6+sX, 7+bY, body); dp(ctx, 7+sX, 7+bY, body); dp(ctx, 8+sX, 7+bY, dark); dp(ctx, 9+sX, 7+bY, dark); dp(ctx, 10+sX, 7+bY, C.wing); dp(ctx, 11+sX, 7+bY, C.outline);
+  dp(ctx, 4+sX, 8+bY, C.outline); dp(ctx, 5+sX, 8+bY, body); dp(ctx, 6+sX, 8+bY, C.wingDark); dp(ctx, 7+sX, 8+bY, C.wing); dp(ctx, 8+sX, 8+bY, C.wingLight); dp(ctx, 9+sX, 8+bY, C.wing); dp(ctx, 10+sX, 8+bY, dark); dp(ctx, 11+sX, 8+bY, C.outline);
+  dp(ctx, 5+sX, 9+bY, C.outline); dp(ctx, 6+sX, 9+bY, dark); dp(ctx, 7+sX, 9+bY, C.wing); dp(ctx, 8+sX, 9+bY, C.wingLight); dp(ctx, 9+sX, 9+bY, C.wing); dp(ctx, 10+sX, 9+bY, C.outline);
+  dp(ctx, 6+sX, 10+bY, C.outline); dp(ctx, 7+sX, 10+bY, dark); dp(ctx, 8+sX, 10+bY, dark); dp(ctx, 9+sX, 10+bY, C.outline);
+  // 목/머리
+  dp(ctx, 6+sX, 3+bY, C.outline); dp(ctx, 7+sX, 3+bY, neck); dp(ctx, 8+sX, 3+bY, neck); dp(ctx, 9+sX, 3+bY, C.outline);
+  dp(ctx, 5+sX, 2+bY, C.outline); dp(ctx, 6+sX, 2+bY, neck); dp(ctx, 7+sX, 2+bY, neck); dp(ctx, 8+sX, 2+bY, neck); dp(ctx, 9+sX, 2+bY, neck); dp(ctx, 10+sX, 2+bY, C.outline);
+  dp(ctx, 5+sX, 1+bY, C.outline); dp(ctx, 6+sX, 1+bY, neck); dp(ctx, 7+sX, 1+bY, neck); dp(ctx, 8+sX, 1+bY, neck); dp(ctx, 9+sX, 1+bY, neck); dp(ctx, 10+sX, 1+bY, C.outline);
+  // 눈
+  dp(ctx, 7+sX, 1+bY, eyeC); dp(ctx, 9+sX, 1+bY, eyeC);
+  // 부리
+  dp(ctx, 6+sX, 2+bY, C.beak); dp(ctx, 5+sX, 2+bY, C.beakDark);
+  // 발
+  const footOff = (row === 0) ? [[0,0],[0,1],[0,0],[0,-1]][frame] : [0,0];
+  dp(ctx, 6+sX, 11, C.feet); dp(ctx, 7+sX, 11, C.feet);
+  dp(ctx, 6+sX, 12+footOff[0], C.feet); dp(ctx, 8+sX, 12+footOff[1], C.feet);
+  dp(ctx, 5+sX, 13, C.feet); dp(ctx, 6+sX, 13, C.feet); dp(ctx, 8+sX, 13, C.feet); dp(ctx, 9+sX, 13, C.feet);
+
+  // 만족 이펙트 (row 2)
+  if (row === 2) {
+    const hearts = [[3,1],[11,1],[3,4],[11,4]];
+    const stars = [[2,7],[12,5]];
+    if (frame >= 1) {
+      dp(ctx, hearts[0][0], hearts[0][1], C.heart);
+      dp(ctx, hearts[1][0], hearts[1][1], C.heart);
+    }
+    if (frame >= 2) {
+      dp(ctx, hearts[2][0], hearts[2][1], C.heart);
+      dp(ctx, stars[0][0], stars[0][1], C.star);
+    }
+    if (frame >= 3) {
+      dp(ctx, hearts[3][0], hearts[3][1], C.heart);
+      dp(ctx, stars[1][0], stars[1][1], C.star);
+      dp(ctx, 7, 0, C.thumbs); dp(ctx, 8, 0, C.thumbs);
+    }
+  }
+}
+
+const pigeons = [
+  {
+    id: 'p1', name: '1001 무던한 비둘기', color: '#9a9aaa',
+    desc: 'HP 20 · 느린 접근 · 기본 패턴\n색상: 평범한 회색. 표정 무덤덤. 눈은 작고 동그랗게.',
+    bc: C.p1body, bl: C.p1light, bd: C.p1dark, bn: C.p1neck, eye: C.eye,
+    special: null,
+    prompt: `16x16 pixel art sprite sheet. 4 columns × 3 rows = 12 frames. Transparent background.
+Character: Ordinary gray pigeon. Chubby body. Small round black eyes. Short orange beak.
+Dull expression, slightly droopy. Plain gray feathers, slightly lighter chest.
+
+Row 1 (walk, 4f): waddling walk cycle. Subtle head bob.
+Row 2 (hit, 4f): white flash damage animation with shake.
+Row 3 (satisfied, 4f): puffed up happy pose, hearts appearing around.
+
+Style: cute chibi pixel art, pastel tone, clean black outlines.`
+  },
+  {
+    id: 'p2', name: '1002 ADHD 비둘기', color: '#e87820',
+    desc: 'HP 45 · 1~2초마다 무작위 방향 전환 · 예측 불가\n색상: 주황+노랑. 눈이 크고 충혈된 느낌. 깃털이 삐쭉삐쭉.',
+    bc: C.p2body, bl: C.p2light, bd: C.p2dark, bn: C.p2neck, eye: C.eye,
+    special: (ctx, f) => { // 삐쭉 깃털
+      dp(ctx, 7, 0, C.p2light); dp(ctx, 9, 0, C.p2body); dp(ctx, 6, 0, C.p2dark);
+    },
+    prompt: `16x16 pixel art sprite sheet. 4 columns × 3 rows = 12 frames. Transparent background.
+Character: Hyperactive orange-yellow pigeon. Wide googly eyes. Spiky/messy feathers sticking out.
+Frantic expression. Orange body with yellow highlights. Feathers look disheveled.
+
+Row 1 (walk, 4f): erratic twitchy movement, head jerks side to side.
+Row 2 (hit, 4f): white flash damage animation with exaggerated shake.
+Row 3 (satisfied, 4f): suddenly calmed down, droopy relaxed pose, hearts appearing.
+
+Style: cute chibi pixel art, vibrant warm tone, clean black outlines.`
+  },
+  {
+    id: 'p3', name: '1003 편식 비둘기', color: '#4080d0',
+    desc: 'HP 80 · 플레이어 반대 방향 도주\n색상: 파란색. 눈이 옆을 보는 느낌. 몸을 살짝 뒤로 젖힌 자세.',
+    bc: C.p3body, bl: C.p3light, bd: C.p3dark, bn: C.p3neck, eye: C.eye,
+    special: null,
+    prompt: `16x16 pixel art sprite sheet. 4 columns × 3 rows = 12 frames. Transparent background.
+Character: Picky blue pigeon. Slightly turned away, suspicious look. Eyes glancing sideways.
+Blue feathers with lighter chest. Nose slightly up, picky/choosy expression.
+
+Row 1 (run away, 4f): running away cycle, looking back nervously.
+Row 2 (hit, 4f): white flash damage animation, startled expression.
+Row 3 (satisfied, 4f): reluctantly happy, slowly warming up, small hearts.
+
+Style: cute chibi pixel art, cool blue tone, clean black outlines.`
+  },
+  {
+    id: 'p4', name: '1004 진상 비둘기', color: '#8840c0',
+    desc: 'HP 90 · 돌진 패턴 · 돌진 중 무적 · 충돌 시 피로도 +5\n색상: 보라색. 눈이 붉게 충혈. 눈썹이 V자. 공격적 표정.',
+    bc: C.p4body, bl: C.p4light, bd: C.p4dark, bn: C.p4neck, eye: C.p4eye,
+    special: (ctx, f) => {
+      // V자 눈썹
+      dp(ctx, 6, 0, C.outline); dp(ctx, 10, 0, C.outline);
+    },
+    prompt: `16x16 pixel art sprite sheet. 4 columns × 3 rows = 12 frames. Transparent background.
+Character: Aggressive purple pigeon. Red/bloodshot eyes. V-shaped angry eyebrows. 
+Puffed up chest. Menacing expression. Purple feathers with dark shading.
+
+Row 1 (patrol+charge, 4f): stomping walk cycle, then a short dash/charge pose.
+Row 2 (hit+invincible, 4f): glowing white/purple flash (invincible state), color shift.
+Row 3 (satisfied, 4f): anger melting away, confused happy expression, hearts.
+
+Style: cute chibi pixel art, deep purple tone, clean black outlines.`
+  },
+  {
+    id: 'p5', name: '1005 눈치 비둘기', color: '#d8c020',
+    desc: 'HP 120 · 일정 거리 유지 · 8초 내 미처치 시 이탈\n색상: 노란색. 눈이 두리번거리는 느낌. 조심스러운 자세.',
+    bc: C.p5body, bl: C.p5light, bd: C.p5dark, bn: C.p5neck, eye: C.eye,
+    special: null,
+    prompt: `16x16 pixel art sprite sheet. 4 columns × 3 rows = 12 frames. Transparent background.
+Character: Cautious yellow pigeon. Wide watchful eyes glancing around. Hunched nervous posture.
+Yellow feathers, slightly smaller than normal. Timid, always looking for escape routes.
+
+Row 1 (cautious walk, 4f): tiptoeing movement, head swiveling nervously side to side.
+Row 2 (flee/hit, 4f): panicked expression, white flash, running away pose.
+Row 3 (satisfied, 4f): relieved and happy, big breath out, hearts appearing.
+
+Style: cute chibi pixel art, warm yellow tone, clean black outlines.`
+  },
+  {
+    id: 'p6', name: '1006 엄마 비둘기', color: '#e080a0',
+    desc: 'HP 220 · 매우 느림 · 보너스 스테이지 · 아이템 드랍 2배\n색상: 연한 분홍. 크기가 약간 큼. 포근하고 따뜻한 느낌.',
+    bc: C.p6body, bl: C.p6light, bd: C.p6dark, bn: C.p6neck, eye: C.eye,
+    special: null,
+    prompt: `16x16 pixel art sprite sheet. 4 columns × 3 rows = 12 frames. Transparent background.
+Character: Motherly pink pigeon. Slightly larger and rounder than normal pigeons. 
+Soft gentle eyes. Warm pink feathers, very fluffy and round. Kind maternal expression.
+
+Row 1 (slow waddle, 4f): very slow gentle waddling, calm and unhurried.
+Row 2 (hit, 4f): surprised expression, white flash, protective pose.
+Row 3 (satisfied, 4f): very happy, cooing with joy, many hearts and sparkles.
+
+Style: cute chibi pixel art, soft pastel pink tone, clean black outlines.`
+  },
+  {
+    id: 'p7', name: '1101 아기 비둘기 (보스)', color: '#d4a820',
+    desc: 'HP 350+ · 페이즈별 패턴 · 방어력 50%\n색상: 황금색. 머리에 작은 왕관. 눈이 날카롭고 도도한 표정.',
+    bc: C.p7body, bl: C.p7light, bd: C.p7dark, bn: C.p7neck, eye: C.eye,
+    special: (ctx, f) => {
+      // 왕관
+      dp(ctx, 6, 0, C.p7crown); dp(ctx, 8, 0, C.p7crown); dp(ctx, 10, 0, C.p7crown);
+      dp(ctx, 7, 0, C.thumbs); dp(ctx, 9, 0, C.thumbs);
+    },
+    prompt: `16x16 pixel art sprite sheet. 4 columns × 3 rows = 12 frames. Transparent background.
+Character: Baby golden pigeon BOSS. Tiny golden crown on head. Sharp determined eyes.
+Golden/yellow feathers with bright highlights. Proud stubborn expression. Slightly smaller body but regal posture.
+
+Row 1 (boss movement, 4f): bouncy evasive movement, crown wobbling, dash pose included.
+Row 2 (phase transition/invincible, 4f): golden glow aura, invincible flash, angry expression intensifies.
+Row 3 (defeated/satisfied, 4f): crown falls off, finally gives in, surprised then very happy, big hearts.
+
+Style: cute chibi pixel art, rich gold tone, clean black outlines. Crown must be clearly visible.`
+  },
+];
+
+const container = document.getElementById('container');
+
+pigeons.forEach(pigeon => {
+  const block = document.createElement('div');
+  block.className = 'pigeon-block';
+
+  const title = document.createElement('p');
+  title.className = 'pigeon-title';
+  title.innerHTML = `<span style="display:inline-block;width:12px;height:12px;background:${pigeon.color};border-radius:2px;margin-right:8px;vertical-align:middle;"></span>${pigeon.name}`;
+  block.appendChild(title);
+
+  const desc = document.createElement('p');
+  desc.className = 'pigeon-desc';
+  desc.innerHTML = pigeon.desc.replace(/\n/g, '<br>');
+  block.appendChild(desc);
+
+  // 3개 행 렌더
+  const rowLabels = ['ROW 1 — 이동/행동 (4f)', 'ROW 2 — 피격/특수 (4f)', 'ROW 3 — 만족/클리어 (4f)'];
+
+  rowLabels.forEach((label, rowIdx) => {
+    const rl = document.createElement('p');
+    rl.className = 'row-label';
+    rl.textContent = label;
+    block.appendChild(rl);
+
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'sprite-row';
+
+    for (let f = 0; f < 4; f++) {
+      const wrap = document.createElement('div');
+      wrap.className = 'frame-wrap';
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE * SCALE;
+      canvas.height = SIZE * SCALE;
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPigeonBase(ctx, pigeon.bc, pigeon.bl, pigeon.bd, pigeon.bn, pigeon.eye, f, rowIdx);
+      if (pigeon.special) pigeon.special(ctx, f);
+
+      const num = document.createElement('p');
+      num.className = 'frame-num';
+      num.textContent = `f${f+1}`;
+      wrap.appendChild(canvas);
+      wrap.appendChild(num);
+      rowDiv.appendChild(wrap);
+    }
+    block.appendChild(rowDiv);
+  });
+
+  // 애니메이션 미리보기
+  const hr = document.createElement('hr');
+  block.appendChild(hr);
+  const previewLabel = document.createElement('p');
+  previewLabel.className = 'row-label';
+  previewLabel.textContent = '실시간 미리보기';
+  block.appendChild(previewLabel);
+
+  const previewRow = document.createElement('div');
+  previewRow.className = 'preview-row';
+
+  ['이동', '피격', '만족'].forEach((lbl, rowIdx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'frame-wrap';
+    const canvas = document.createElement('canvas');
+    canvas.width = SIZE * SCALE;
+    canvas.height = SIZE * SCALE;
+    const label = document.createElement('p');
+    label.className = 'preview-label';
+    label.textContent = lbl;
+    wrap.appendChild(canvas);
+    wrap.appendChild(label);
+    previewRow.appendChild(wrap);
+
+    let frame = 0;
+    setInterval(() => {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPigeonBase(ctx, pigeon.bc, pigeon.bl, pigeon.bd, pigeon.bn, pigeon.eye, frame, rowIdx);
+      if (pigeon.special) pigeon.special(ctx, frame);
+      frame = (frame + 1) % 4;
+    }, 180);
+  });
+
+  block.appendChild(previewRow);
+
+  // AI 프롬프트
+  const promptBox = document.createElement('div');
+  promptBox.className = 'ai-prompt';
+  promptBox.innerHTML = `<p class="ai-prompt-title">📋 이미지 생성 AI 프롬프트</p><p class="ai-prompt-text">${pigeon.prompt}</p>`;
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'copy-btn';
+  copyBtn.textContent = '📋 복사';
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(pigeon.prompt).then(() => {
+      copyBtn.textContent = '✓ 복사됨';
+      setTimeout(() => copyBtn.textContent = '📋 복사', 2000);
+    });
+  };
+  promptBox.appendChild(copyBtn);
+  block.appendChild(promptBox);
+
+  container.appendChild(block);
+});
+</script>
+</body>
+</html>

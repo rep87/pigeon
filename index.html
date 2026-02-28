@@ -1,0 +1,483 @@
+﻿<!doctype html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
+    <title>Game Pigeon 3</title>
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            font-family: "Segoe UI", "Noto Sans KR", sans-serif;
+            background: radial-gradient(circle at 20% 10%, #fff, #c8ebff 38%, #f4fbff 82%)
+        }
+
+        .wrap {
+            width: min(440px, 100vw);
+            padding: 10px;
+            position: relative
+        }
+
+        .hud {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: start;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, .82);
+            font-size: 12px
+        }
+
+        #hudLevel {
+            font-weight: 800
+        }
+        #hudHeart{font-size:12px;font-weight:800;color:#be123c;margin-bottom:2px}
+
+        #hudRight {
+            text-align: right;
+            font-weight: 900;
+            font-size: 24px;
+            line-height: 1
+        }
+        #hudRight .lb{display:block;font-size:10px;font-weight:700;color:#64748b;letter-spacing:.8px}
+
+        #xpText {
+            font-size: 10px;
+            font-weight: 700;
+            color: #334155;
+            margin-top: 2px
+        }
+
+        #xpBar {
+            height: 6px;
+            background: #cbd5e1;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 2px
+        }
+
+        #xpFill {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #2563eb, #22c55e)
+        }
+
+        .bar {
+            height: 10px;
+            background: #d1d5db;
+            border-radius: 999px;
+            overflow: hidden
+        }
+
+        .fill {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #22c55e, #f59e0b, #ef4444)
+        }
+
+        #bossHud {
+            display: none;
+            margin-bottom: 8px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(10, 20, 35, .88);
+            color: #f8fafc
+        }
+
+        #bossHud .r {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        #bossDir {
+            font-size: 24px;
+            font-weight: 800;
+            width: 32px;
+            text-align: center
+        }
+
+        #bossBar {
+            height: 14px;
+            border-radius: 999px;
+            background: #334155;
+            overflow: hidden;
+            flex: 1
+        }
+
+        #bossFill {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #f59e0b, #facc15, #fde047)
+        }
+
+        #bossTime {
+            font-weight: 700;
+            font-size: 12px
+        }
+
+        #bossHpTxt {
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 68px;
+            text-align: right
+        }
+
+        canvas {
+            width: min(96vw, 420px);
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            border-radius: 12px;
+            border: 2px solid #b9d8ef;
+            background: linear-gradient(180deg, #ebf8ff 0%, #eaf8ea 60%, #daf4d8 100%);
+            aspect-ratio: 9/16
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 84px 10px 10px;
+            border-radius: 12px;
+            background: rgba(11, 18, 32, .64);
+            display: grid;
+            place-items: center;
+            z-index: 6;
+            padding: 16px
+        }
+
+        .overlay[hidden] {
+            display: none
+        }
+
+        .panel {
+            width: min(350px, 100%);
+            padding: 18px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .97);
+            text-align: center
+        }
+
+        h1 {
+            margin: 0 0 16px;
+            font-size: 28px
+        }
+
+        .btns {
+            display: grid;
+            gap: 10px
+        }
+
+        button {
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 12px;
+            font-size: 15px;
+            font-weight: 700;
+            background: #2563eb;
+            color: #eff6ff;
+            cursor: pointer
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px
+        }
+
+        .card {
+            width: 100%;
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            text-align: left
+        }
+
+        .msg {
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 3px 8px rgba(0, 0, 0, .45);
+            text-align: center;
+            white-space: pre-line
+        }
+
+        .item {
+            position: absolute;
+            right: 16px;
+            bottom: 16px;
+            z-index: 5;
+            display: grid;
+            gap: 8px
+        }
+
+        #skillDial {
+            position: absolute;
+            left: 50%;
+            bottom: 16px;
+            transform: translateX(-50%);
+            width: 52px;
+            height: 52px;
+            z-index: 5;
+            border-radius: 50%;
+            border: 3px solid rgba(248, 113, 113, 0.72);
+            background: rgba(15, 23, 42, 0.72);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+            display: none;
+        }
+
+        #skillNeedle {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 2px;
+            height: 42%;
+            transform-origin: 50% 100%;
+            background: #fef08a;
+            border-radius: 2px;
+        }
+
+        #skillTimer {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: #f8fafc;
+            font-size: 12px;
+            font-weight: 800;
+            text-shadow: 0 1px 2px #000;
+            pointer-events: none;
+        }
+
+        .slot {
+            position: relative;
+            width: 64px;
+            height: 64px
+        }
+
+        .slot .t {
+            position: absolute;
+            top: -16px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            text-shadow: 0 1px 2px #000
+        }
+
+        .slot button {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            font-size: 28px;
+            border: 2px solid #64748b;
+            background: rgba(15, 23, 42, .72)
+        }
+
+        .slot button.empty {
+            font-size: 18px;
+            color: #64748b
+        }
+
+        #buffUi {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 108px;
+            z-index: 5;
+            display: flex;
+            gap: 8px
+        }
+
+        .buff {
+            min-width: 54px;
+            padding: 5px 8px;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, .72);
+            color: #e2e8f0;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            border: 1px solid #64748b
+        }
+
+        #devPanel {
+            position: absolute;
+            left: calc(100% + 10px);
+            top: 86px;
+            width: 150px;
+            padding: 8px;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, .9);
+            color: #e2e8f0;
+            z-index: 7
+        }
+
+        #devPanel button {
+            width: 100%;
+            margin-bottom: 6px;
+            padding: 6px 8px;
+            font-size: 12px
+        }
+
+        #statsBody {
+            margin: 10px 0 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #0f172a;
+            white-space: pre-line;
+            text-align: left
+        }
+
+        .bgmOption {
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(15, 23, 42, .18);
+            text-align: left;
+            font-size: 12px;
+            color: #0f172a;
+            font-weight: 700
+        }
+
+        .bgmOption label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: #0f172a;
+            font-weight: 700
+        }
+
+        .bgmVolumeRange {
+            width: 100%;
+            accent-color: #2563eb
+        }
+
+        #devPanel .bgmOption {
+            border-top: 1px solid rgba(226, 232, 240, .22);
+            color: #e2e8f0
+        }
+
+        #devPanel .bgmOption label {
+            color: #e2e8f0
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="hud">
+            <div>
+                <div id="hudHeart">HEART 200</div>
+                <div id="hudLevel">LV 1</div>
+                <div id="xpText">XP 0 / 10</div>
+                <div id="xpBar">
+                    <div id="xpFill"></div>
+                </div>
+            </div>
+            <div id="hudRight"><span class="lb">TIME</span><span id="hudTimer">60.0s</span></div>
+        </div>
+        <div style="text-align:center;font-weight:800;color:#0f172a;margin:-2px 0 8px" id="hudCenter">S1 | TARGET 180</div>
+        <div id="bossHud">
+            <div class="r">
+                <div id="bossDir">UP</div>
+                <div id="bossBar">
+                    <div id="bossFill"></div>
+                </div>
+                <div id="bossHpTxt">0%</div>
+                <div id="bossTime">120.0s</div>
+            </div>
+        </div>
+        <canvas id="game" width="540" height="960"></canvas>
+        <div class="item">
+            <div class="slot">
+                <div class="t" id="st0"></div><button id="s0" class="empty">+</button>
+            </div>
+            <div class="slot">
+                <div class="t" id="st1"></div><button id="s1" class="empty">+</button>
+            </div>
+        </div>
+        <div id="buffUi"></div>
+        <div id="skillDial">
+            <div id="skillNeedle"></div>
+            <div id="skillTimer">10s</div>
+        </div>
+        <div class="overlay" id="titleOv">
+            <div class="panel">
+                <h1>오늘도 모이 난사 중</h1>
+                <div class="btns"><button id="startBtn">시작</button><button id="shopBtn">상점</button><button
+                        id="exitBtn">나가기</button></div>
+                <div class="bgmOption">
+                    <label for="bgmVolumeMain">배경음악 <span class="bgmVolumeValue">50%</span></label>
+                    <input type="range" id="bgmVolumeMain" class="bgmVolumeRange" min="0" max="100" value="50">
+                </div>
+                <div id="titleResult" style="margin-top:10px;font-weight:700"></div>
+            </div>
+        </div>
+        <div class="overlay" id="shopOv" hidden>
+            <div class="panel">
+                <h2 style="margin:0 0 6px">상점</h2>
+                <div id="shopHeart" style="font-weight:800;margin-bottom:10px">하트 200</div>
+                <div class="btns">
+                    <button id="buySaltyBtn">짭짭한맛 구매 (200)</button>
+                    <button id="buySweetBtn">단짠한맛 구매 (200)</button>
+                    <button id="shopCloseBtn">닫기</button>
+                </div>
+            </div>
+        </div>
+        <div class="overlay" id="levelOv" hidden>
+            <div class="panel">
+                <h2 id="lvTitle" style="margin:0 0 8px">무기 선택</h2>
+                <p id="lvSub" style="margin:0 0 10px">업그레이드 선택</p>
+                <div class="cards" id="lvCards"></div>
+                <div class="bgmOption">
+                    <label for="bgmVolumeLevel">배경음악 <span class="bgmVolumeValue">50%</span></label>
+                    <input type="range" id="bgmVolumeLevel" class="bgmVolumeRange" min="0" max="100" value="50">
+                </div>
+            </div>
+        </div>
+        <div class="overlay" id="evoOv" hidden>
+            <div class="panel">
+                <div id="evoMsg" style="font-size:28px;font-weight:800;color:#fde68a">진화 완료</div>
+            </div>
+        </div>
+        <div class="overlay" id="msgOv" hidden>
+            <div class="msg" id="msgText"></div>
+        </div>
+        <div class="overlay" id="statsOv" hidden>
+            <div class="panel">
+                <h2 style="margin:0 0 8px">통계</h2>
+                <div id="statsBody"></div><button id="statsCloseBtn">닫기 (C)</button>
+            </div>
+        </div>
+        <div id="devPanel"><button data-stage="1">S1</button><button data-stage="2">S2</button><button
+                data-stage="3">S3</button><button data-stage="4">S4</button><button data-stage="5">S5</button><button
+                id="devBossBtn">Boss</button><button id="devMaxBtn">LV20+Cards</button>
+            <div class="bgmOption">
+                <label for="bgmVolumeDev">배경음악 <span class="bgmVolumeValue">50%</span></label>
+                <input type="range" id="bgmVolumeDev" class="bgmVolumeRange" min="0" max="100" value="50">
+            </div>
+        </div>
+    </div>
+    <script type="module" src="./src/game.js"></script>
+</body>
+
+</html>
+
+
+
