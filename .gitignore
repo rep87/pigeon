@@ -1,0 +1,10 @@
+node_modules/
+test-results/
+.env
+.env.*
+*.log
+*.tmp
+tmp-*.js
+tmp-*.png
+.playwright-*.png
+.tmp*.png

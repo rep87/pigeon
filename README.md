@@ -45,18 +45,14 @@ This project is part of:
 
 [AI Game Prototyping Experiments](https://github.com/rep87/ai-game-prototyping-experiments)
 
-## Canonical Local Source
+## Canonical Source Note
 
-The current canonical local folder is:
+This repository was synced from the `game_pigeon_3` local working version.
 
-```text
-C:\Users\bangs\.gemini\antigravity\game_pigeon_3
-```
-
-`game_pigeon_3 - 복사본` is treated as a local archive / earlier asset-heavy copy.
+The similarly named copy folder is treated as a local archive / earlier asset-heavy copy.
 
 ## Status
 
 - Prototype / experiment
 - Not a finished game
-- Code sync is not being changed in this README-only update
+- Code synced from the canonical local source on 2026-07-07

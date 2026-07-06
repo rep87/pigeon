@@ -49,6 +49,37 @@
             line-height: 1
         }
         #hudRight .lb{display:block;font-size:10px;font-weight:700;color:#64748b;letter-spacing:.8px}
+        #hudStars {
+            position: relative;
+            width: fit-content;
+            margin: -4px auto 6px;
+            font-size: 20px;
+            line-height: 1;
+            letter-spacing: 2px;
+            font-weight: 900;
+            user-select: none;
+        }
+        #hudStarsBase {
+            color: #94a3b8;
+        }
+        #hudStarsFill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            color: #facc15;
+            text-shadow: 0 0 6px rgba(250, 204, 21, .35);
+            pointer-events: none;
+        }
+        #hudStarsScore {
+            margin-left: 8px;
+            font-size: 11px;
+            color: #334155;
+            letter-spacing: 0;
+            vertical-align: middle;
+        }
 
         #xpText {
             font-size: 10px;
@@ -204,8 +235,13 @@
             background: #0f172a;
             color: #e2e8f0;
             border: 1px solid #334155;
-            text-align: left
+            text-align: left;
+            font-size: 13px;
+            line-height: 1.25;
+            padding: 10px 9px;
         }
+        .card strong{display:block;font-size:15px;margin-bottom:8px}
+        .card small{display:block;font-size:11px;margin-top:6px;color:#cbd5e1}
 
         .msg {
             font-size: 24px;
@@ -221,7 +257,7 @@
             right: 16px;
             bottom: 16px;
             z-index: 5;
-            display: grid;
+            display: none;
             gap: 8px
         }
 
@@ -298,22 +334,41 @@
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            top: 108px;
+            top: 142px;
             z-index: 5;
             display: flex;
             gap: 8px
         }
 
         .buff {
-            min-width: 54px;
+            min-width: 72px;
             padding: 5px 8px;
             border-radius: 10px;
             background: rgba(15, 23, 42, .72);
             color: #e2e8f0;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             text-align: center;
             border: 1px solid #64748b
+        }
+        .charCard {
+            width: 100%;
+            text-align: left;
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            padding: 14px;
+        }
+        .charCard strong {
+            display: block;
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+        .charCard span {
+            display: block;
+            font-size: 12px;
+            line-height: 1.45;
+            color: #cbd5e1;
         }
 
         #devPanel {
@@ -392,6 +447,7 @@
             </div>
             <div id="hudRight"><span class="lb">TIME</span><span id="hudTimer">60.0s</span></div>
         </div>
+        <div id="hudStars"><span id="hudStarsBase">★★★★★</span><span id="hudStarsFill">★★★★★</span><span id="hudStarsScore">0.00 / 5.00</span></div>
         <div style="text-align:center;font-weight:800;color:#0f172a;margin:-2px 0 8px" id="hudCenter">S1 | TARGET 180</div>
         <div id="bossHud">
             <div class="r">
@@ -440,6 +496,20 @@
                 </div>
             </div>
         </div>
+        <div class="overlay" id="charOv" hidden>
+            <div class="panel">
+                <h2 style="margin:0 0 10px">캐릭터 선택</h2>
+                <div class="btns">
+                    <button id="charSalarymanBtn" class="charCard">
+                        <strong>샐러리맨</strong>
+                        <span>커피 LV3 시작</span>
+                        <span>커피 지속시간 +50%</span>
+                        <span>커피 카드 확률 증가</span>
+                    </button>
+                    <button id="charCloseBtn">닫기</button>
+                </div>
+            </div>
+        </div>
         <div class="overlay" id="levelOv" hidden>
             <div class="panel">
                 <h2 id="lvTitle" style="margin:0 0 8px">무기 선택</h2>
@@ -467,7 +537,7 @@
         </div>
         <div id="devPanel"><button data-stage="1">S1</button><button data-stage="2">S2</button><button
                 data-stage="3">S3</button><button data-stage="4">S4</button><button data-stage="5">S5</button><button
-                id="devBossBtn">Boss</button><button id="devMaxBtn">LV20+Cards</button>
+                id="devBossBtn">Boss</button><button id="devLv5Btn">LV +5</button><button id="devLv10Btn">LV +10</button><button id="devThumb500Btn">👍 +500</button><button id="devItemCoffee">커피 +1</button><button id="devItemChili">청양고추 +1</button><button id="devItemRamen">라면 +1</button><button id="devItemLunch">도시락 +1</button><button id="devItemEnergy">핫식스 +1</button><button id="devItemBacchus">박카스 +1</button><button id="devItemAtomic">모폭 +1</button>
             <div class="bgmOption">
                 <label for="bgmVolumeDev">배경음악 <span class="bgmVolumeValue">50%</span></label>
                 <input type="range" id="bgmVolumeDev" class="bgmVolumeRange" min="0" max="100" value="50">
